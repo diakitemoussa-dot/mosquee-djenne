@@ -2,9 +2,13 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const MODEL_URL    = 'assets/models/djenne-mosque-only.glb';
+const USDZ_URL     = 'assets/models/djenne-mosque-only.usdz';
 const INITIAL_SCALE = 0.08;
 const SCALE_MIN    = 0.02;
 const SCALE_MAX    = 0.5;
+
+const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 /* ---------- État module ---------- */
 let _renderer = null;
@@ -27,6 +31,9 @@ let _hintEl  = null;
 /* ========== API publique ========== */
 
 export async function enter() {
+  // iOS → Quick Look AR natif via USDZ
+  if (_isIOS) { _enterIOS(); return; }
+
   if (!navigator.xr) { _toast('AR non disponible sur cet appareil'); return; }
 
   const supported = await navigator.xr
@@ -227,4 +234,20 @@ function _exit() {
   window.MosqueScene.controls.enabled = true;
   window.MosqueScene.resumeLoop();
   _renderer = null;
+}
+
+/* ---------- iOS Quick Look AR ---------- */
+function _enterIOS() {
+  let anchor = document.getElementById('_arQuickLookAnchor');
+  if (!anchor) {
+    anchor = document.createElement('a');
+    anchor.id = '_arQuickLookAnchor';
+    anchor.rel = 'ar';
+    anchor.style.display = 'none';
+    const img = document.createElement('img');
+    anchor.appendChild(img);
+    document.body.appendChild(anchor);
+  }
+  anchor.href = USDZ_URL;
+  anchor.click();
 }
