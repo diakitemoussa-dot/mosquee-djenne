@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# Outils locaux de dev Blender (non versionnés)
+tools/blender_mcp_addon.py
