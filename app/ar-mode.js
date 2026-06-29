@@ -1,6 +1,5 @@
-/* Mode AR — Android (WebXR / Scene Viewer) + iOS (Quick Look)
- * Utilise <model-viewer> de Google qui gère les deux plateformes
- * avec un simple GLB, sans USDZ ni code WebXR custom.
+/* Mode AR — Android (Scene Viewer / WebXR) + iOS (Quick Look)
+ * Utilise <model-viewer> de Google — un seul GLB gère tout.
  */
 
 export async function enter() {
@@ -10,18 +9,19 @@ export async function enter() {
     return;
   }
 
-  // Attendre que le custom element model-viewer soit défini et upgradé
+  // Attendre que le custom element soit complètement défini
   await customElements.whenDefined('model-viewer');
 
-  if (typeof viewer.activateAR !== 'function') {
-    _toast('AR non disponible sur cet appareil');
+  // Vérifier si AR est supporté sur cet appareil
+  if (!viewer.canActivateAR) {
+    _toast('AR non disponible (ARCore ou iOS 12+ requis)');
     return;
   }
 
-  // Feedback si la session AR échoue
   viewer.addEventListener('ar-status', (e) => {
-    if (e.detail.status === 'failed') {
-      _toast('AR non disponible sur cet appareil');
+    const s = e.detail.status;
+    if (s === 'failed') {
+      _toast('Impossible de lancer l\'AR — vérifiez ARCore');
     }
   }, { once: true });
 
