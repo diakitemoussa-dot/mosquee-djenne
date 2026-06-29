@@ -3,16 +3,28 @@
  * avec un simple GLB, sans USDZ ni code WebXR custom.
  */
 
-export function enter() {
+export async function enter() {
   const viewer = document.getElementById('mosqueArViewer');
   if (!viewer) {
     _toast('Composant AR non trouvé');
     return;
   }
+
+  // Attendre que le custom element model-viewer soit défini et upgradé
+  await customElements.whenDefined('model-viewer');
+
   if (typeof viewer.activateAR !== 'function') {
     _toast('AR non disponible sur cet appareil');
     return;
   }
+
+  // Feedback si la session AR échoue
+  viewer.addEventListener('ar-status', (e) => {
+    if (e.detail.status === 'failed') {
+      _toast('AR non disponible sur cet appareil');
+    }
+  }, { once: true });
+
   viewer.activateAR();
 }
 
