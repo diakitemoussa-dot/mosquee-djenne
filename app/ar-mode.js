@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 const MODEL_URL    = 'assets/models/djenne-mosque-only.glb';
 const USDZ_URL     = 'assets/models/djenne-mosque-only.usdz';
+const DRACO_DECODER = 'https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/libs/draco/';
 const INITIAL_SCALE = 0.08;
 const SCALE_MIN    = 0.02;
 const SCALE_MAX    = 0.5;
@@ -62,7 +64,11 @@ export async function enter() {
 
 function _loadModel() {
   return new Promise((resolve, reject) => {
-    new GLTFLoader().load(
+    const draco = new DRACOLoader();
+    draco.setDecoderPath(DRACO_DECODER);
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(draco);
+    loader.load(
       MODEL_URL,
       (gltf) => {
         _mosque = gltf.scene;
@@ -78,6 +84,8 @@ function _loadModel() {
 }
 
 async function _startSession() {
+  _renderer.xr.enabled = true;
+
   _session = await navigator.xr.requestSession('immersive-ar', {
     requiredFeatures: ['hit-test'],
     optionalFeatures: ['dom-overlay'],
@@ -85,7 +93,6 @@ async function _startSession() {
   });
   _session.addEventListener('end', _exit);
 
-  _renderer.xr.enabled = true;
   await _renderer.xr.setSession(_session);
 
   const viewerSpace    = await _session.requestReferenceSpace('viewer');
