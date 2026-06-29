@@ -624,6 +624,7 @@ function hideInfo(){
 function closeFiche(){
   hideInfo();
   setGlow([]);
+  _backSound.currentTime = 0; _backSound.play().catch(() => {});
   controls.enabled = true;                                 // déverrouille l'orbite
   controls.maxPolarAngle = Math.PI * 0.495;                // rétablit la limite anti-sol
   if (hasSavedCam) {
@@ -823,6 +824,10 @@ _actionSound.volume  = 0.85;
 const _writingSound = new Audio('assets/audio/writing-sound.mp3');
 _writingSound.preload = 'auto';
 _writingSound.volume  = 0.7;
+
+const _backSound = new Audio('assets/audio/back-sound.mp3');
+_backSound.preload = 'auto';
+_backSound.volume  = 0.85;
 
 function _playWritingLoop() {
   _writingSound.loop = true;
