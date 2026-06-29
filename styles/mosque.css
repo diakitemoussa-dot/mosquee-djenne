@@ -423,15 +423,26 @@
 .mq-info-block{ display: none; }
 .mq-info-block.on{ display: block; }
 
-/* Titre — Rubik, centré, avec filet doré */
+/* Titre — Rubik, centré, effet nuage sombre */
 .mq-info-title{
   margin: 0 auto .9em;
   font-family: 'Rubik', system-ui, sans-serif;
-  font-weight: 700;
+  font-weight: 800;
   font-size: clamp(1.25rem, 4.6vw, 1.95rem);
   letter-spacing: .14em;
   text-align: center;
   text-transform: uppercase;
+  color: #c4aed8;
+  text-shadow:
+    0 0 4px  #1a0d28,
+    0 0 10px rgba(35,18,52,.98),
+    0 0 20px rgba(25,12,42,.95),
+    0 0 36px rgba(18,8,32,.9),
+    0 0 56px rgba(12,5,22,.8),
+     4px  5px 10px rgba(10,4,20,.99),
+    -4px -4px 10px rgba(35,18,52,.85),
+     4px -4px  8px rgba(20,10,36,.8),
+    -4px  5px  8px rgba(20,10,36,.8);
 }
 .mq-info-title::after{
   content: '';
@@ -457,7 +468,7 @@
 .mq-info-list li{
   position: relative;
   padding: .55em 1em .55em 1.4em;
-  color: #fff;
+  color: #edd9a3;
   text-align: left;
   font-size: clamp(.9rem, 2.4vw, 1.05rem);
   line-height: 1.55;
@@ -469,12 +480,9 @@
   border-radius: 0;
   box-shadow: none;
   text-shadow:
-    1px 1px 0 #55415d,
-    2px 2px 0 #55415d,
-    3px 3px 0 #55415d,
-    4px 4px 0 #4a3752,
-    5px 5px 0 #3f2e46,
-    5px 5px 14px rgba(0,0,0,.55);
+    1px 1px 0 rgba(85,65,93,.8),
+    2px 2px 0 rgba(85,65,93,.5),
+    3px 3px 8px rgba(0,0,0,.35);
 }
 .mq-info-list li::before{
   content: '';
