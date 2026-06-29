@@ -23,7 +23,7 @@ const MODEL_URL     = 'assets/models/djenne-ar.glb';
 const DRACO_DECODER = 'https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/libs/draco/';
 
 // URL de la vidéo du grand crépissage (à renseigner — laisser vide affiche "bientôt disponible")
-const VIDEO_CREPISSAGE = '';
+const VIDEO_CREPISSAGE = 'assets/videos/annual_plastering.mp4';
 
 /* ---------- Renderer ---------- */
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });

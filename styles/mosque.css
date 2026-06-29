@@ -586,7 +586,7 @@
   transition: opacity .4s ease, visibility .4s;
 }
 .mq-video-modal.open{ opacity: 1; visibility: visible; pointer-events: auto; }
-.mq-video-backdrop{ position: absolute; inset: 0; background: rgba(4,3,8,.82); backdrop-filter: blur(4px); }
+.mq-video-backdrop{ position: absolute; inset: 0; background: rgba(4,3,8,.55); }
 .mq-video-inner{
   position: relative;
   width: min(92vw, 960px);
