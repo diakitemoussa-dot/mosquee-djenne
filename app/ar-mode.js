@@ -14,18 +14,39 @@ export async function enter() {
 
   // Vérifier si AR est supporté sur cet appareil
   if (!viewer.canActivateAR) {
-    _toast('AR non disponible (ARCore ou iOS 12+ requis)');
+    _showArUnavailable();
     return;
   }
 
   viewer.addEventListener('ar-status', (e) => {
-    const s = e.detail.status;
-    if (s === 'failed') {
-      _toast('Impossible de lancer l\'AR — vérifiez ARCore');
+    if (e.detail.status === 'failed') {
+      _showArUnavailable();
     }
   }, { once: true });
 
   viewer.activateAR();
+}
+
+function _showArUnavailable() {
+  const stage = document.getElementById('mosqueStage');
+  if (!stage) return;
+
+  // Supprimer un éventuel message déjà affiché
+  stage.querySelector('.ar-unavailable-msg')?.remove();
+
+  const el = document.createElement('div');
+  el.className = 'ar-unavailable-msg';
+  el.innerHTML = `
+    <span class="ar-unavail-icon">⬡</span>
+    <strong>AR non disponible</strong>
+    <p>Votre appareil ne supporte pas la réalité augmentée.<br>
+    Un smartphone Android avec ARCore ou un iPhone (iOS 12+) est requis.</p>
+    <button class="ar-unavail-close" aria-label="Fermer">✕</button>
+  `;
+  el.querySelector('.ar-unavail-close').onclick = () => el.remove();
+  stage.appendChild(el);
+
+  setTimeout(() => el.remove(), 6000);
 }
 
 function _toast(msg) {
