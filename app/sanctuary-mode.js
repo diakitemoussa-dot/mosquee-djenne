@@ -441,7 +441,7 @@ function resetImamScan() {
 /* ========================================================= */
 /* ---- Scan — Entrée principale (position fixe)         ---- */
 /* ========================================================= */
-const ENTREE_POS      = new THREE.Vector3(17.44, 6.6569, 10.675);
+const ENTREE_POS      = new THREE.Vector3(22.411, 6.2587, 9.3035);
 const ENTREE_DIST     = 7;
 const ENTREE_DURATION = 2.5;
 const ENTREE_COOLDOWN = 12;
