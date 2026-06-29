@@ -39,21 +39,27 @@ function _spawnDirAt(pos) {
   if (!_dirGLTF || !M?.scene) return;
   const root = _dirGLTF.scene.clone(true);
   root.position.copy(pos);
+  root.userData.baseY   = pos.y;
+  root.userData.phaseOff = Math.random() * Math.PI * 2; // décalage pour éviter sync
   M.scene.add(root);
   _dirNodes.push(root);
-  if (_dirGLTF.animations.length) {
-    const mx = new THREE.AnimationMixer(root);
-    mx.clipAction(_dirGLTF.animations[0]).play();
-    _dirMixers.push(mx);
+}
+
+let _dirTime = 0;
+
+function _tickDirAnim(dt) {
+  _dirTime += dt;
+  for (const n of _dirNodes) {
+    n.position.y = n.userData.baseY + Math.sin(_dirTime * 2.2 + n.userData.phaseOff) * 0.18;
+    n.rotation.y = _dirTime * 0.6 + n.userData.phaseOff;
   }
 }
 
 function _clearDirMarkers() {
   _dirNodes.forEach(n => M?.scene.remove(n));
   _dirNodes.length = 0;
-  _dirMixers.forEach(mx => mx.stopAllAction());
-  _dirMixers.length = 0;
   _tombDirPlaced = false;
+  _dirTime = 0;
 }
 
 function _loadDirModel() {
@@ -888,7 +894,7 @@ function tickFPS(dt) {
   M.camera.position.copy(playerPos);
   if (pointLight) pointLight.position.copy(playerPos);
 
-  for (const mx of _dirMixers) mx.update(dt);
+  _tickDirAnim(dt);
   tickPortals(dt);
   tickTombScan(dt);
   tickPetitTombScan(dt);
