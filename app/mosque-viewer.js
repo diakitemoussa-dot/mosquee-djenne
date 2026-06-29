@@ -596,6 +596,7 @@ function showInfo(part){
     if (on) activeBlock = b;
   });
   splitChars(activeBlock);                          // prépare la cascade lettre par lettre
+  _writingSound.currentTime = 0; _writingSound.play().catch(() => {});
   if (ui) {
     ui.classList.add('info-open');           // mode "fiche" -> autres boutons cachés
     ui.classList.toggle('info-facade', part === 'facade');   // bouton crépissage : façade seulement
@@ -810,6 +811,10 @@ _gameBtnSound.volume  = 0.9;
 const _actionSound = new Audio('assets/audio/action-sound.mp3');
 _actionSound.preload = 'auto';
 _actionSound.volume  = 0.85;
+
+const _writingSound = new Audio('assets/audio/writing-sound.mp3');
+_writingSound.preload = 'auto';
+_writingSound.volume  = 0.7;
 
 /* Déverrouillage iOS */
 document.addEventListener('audioUnlock', () => {
