@@ -58,8 +58,9 @@ function _clearDirMarkers() {
 
 function _loadDirModel() {
   const _doSpawn = () => {
-    // Test : une seule flèche à la coordonnée confirmée
-    _spawnDirAt(new THREE.Vector3(22.411, 6.9853, 9.3035));
+    _spawnDirAt(new THREE.Vector3(22.411, 6.9853,  9.3035));  // entrée principale
+    _spawnDirAt(new THREE.Vector3( 3.2361, 6.9853, 30.476));  // petit tombeau
+    if (tombCenter) { _spawnDirAt(tombCenter); _tombDirPlaced = true; }
   };
   if (_dirGLTF) { _doSpawn(); return; }
   _gltfDir.load('assets/models/direction.glb', (gltf) => {
