@@ -5,27 +5,76 @@
    ========================================================== */
 import * as THREE from 'three';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
-/* ---------- Sphères marqueurs de scan ---------- */
-const _scanSphereMat = new THREE.MeshBasicMaterial({
-  color: 0x9b30ff, transparent: true, opacity: 0.35, depthWrite: false
-});
-const _scanSphereGeo = new THREE.SphereGeometry(0.55, 16, 12);
+let _markerImam = null;
 
-const _makeScanMarker = (pos) => {
-  const mesh = new THREE.Mesh(_scanSphereGeo, _scanSphereMat.clone());
-  mesh.position.copy(pos);
-  return mesh;
-};
+/* ---------- Indicateurs direction (GLB animé) ---------- */
+const _draco = new DRACOLoader();
+_draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+const _gltfDir = new GLTFLoader();
+_gltfDir.setDRACOLoader(_draco);
 
-let _markerPetitTomb = null;
-let _markerImam      = null;
-let _markerEntree    = null;
-let _markerTomb      = null;
+let   _dirGLTF       = null;
+const _dirNodes      = [];
+const _dirMixers     = [];
+let   _tombDirPlaced = false;
+
+function _spawnDirAt(pos) {
+  if (!_dirGLTF || !M?.scene) return;
+  const root = _dirGLTF.scene.clone(true);
+  root.position.copy(pos);
+  root.userData.baseY    = pos.y;
+  root.userData.phaseOff = Math.random() * Math.PI * 2;
+  root.traverse(child => {
+    if (child.isMesh) {
+      child.material = child.material.clone();
+      child.material.color.set(0xF9D58B);
+      child.material.emissive.set(0xF9D58B);
+      child.material.emissiveIntensity = 0.8;
+    }
+  });
+  M.scene.add(root);
+  _dirNodes.push(root);
+}
+
+let _dirTime = 0;
+
+function _tickDirAnim(dt) {
+  _dirTime += dt;
+  for (const n of _dirNodes) {
+    n.position.y = n.userData.baseY + Math.sin(_dirTime * 2.2 + n.userData.phaseOff) * 0.18;
+    n.rotation.y = _dirTime * 0.6 + n.userData.phaseOff;
+  }
+}
+
+function _clearDirMarkers() {
+  _dirNodes.forEach(n => M?.scene.remove(n));
+  _dirNodes.length = 0;
+  _tombDirPlaced = false;
+  _dirTime = 0;
+}
+
+function _loadDirModel() {
+  const _doSpawn = () => {
+    _spawnDirAt(new THREE.Vector3( 22.411,  6.9853,   9.3035));  // entrée principale
+    _spawnDirAt(new THREE.Vector3(  3.2361, 6.9853,  30.476));   // petit tombeau
+    _spawnDirAt(new THREE.Vector3(-40.826,  6.9853,  33.8));     // zone extérieure ouest
+    _spawnDirAt(new THREE.Vector3( 17.487,  6.9853,  -6.6934));  // Blender X=17.487 Y=6.6934 Z=6.9853
+    _spawnDirAt(new THREE.Vector3( 14.11,  17.541,   -2.5977));  // Blender X=14.11  Y=2.5977 Z=17.541
+    _spawnDirAt(new THREE.Vector3( -9.975,  6.9853,  21.253));   // Blender X=-9.975 Y=-21.253 Z=6.9853
+  };
+  if (_dirGLTF) { _doSpawn(); return; }
+  _gltfDir.load('assets/models/direction.glb', (gltf) => {
+    _dirGLTF = gltf;
+    _doSpawn();
+  });
+}
 
 /* ---------- Son scanner ---------- */
 const _scannerSound = new Audio('assets/audio/scanner_sound.mp3');
@@ -93,6 +142,10 @@ const WALK_SPEED      = 3.0;
 const TURN_SPEED      = 0.85;
 const CAPSULE_R       = 0.55;
 const EYE_HEIGHT      = 1.7;
+const GRAVITY         = 18;    // unités/s²
+const FALL_DEATH_Y    = -15;   // respawn si tombé sous ce seuil
+
+let _velY = 0;
 
 /* ---------- Regard libre ---------- */
 const LOOK_SENSITIVITY  = 0.004;
@@ -215,15 +268,13 @@ function _searchTomb() {
     }
   });
   if (!found) { tombCenter = null; return; }
-  if (!_markerTomb && M?.scene) {
-    _markerTomb = _makeScanMarker(tombCenter);
-    M.scene.add(_markerTomb);
-  }
+  _tombDirPlaced = false; // sera placé dans tickTombScan dès que le GLB est prêt
 }
 
 function tickTombScan(dt) {
   _searchTomb();
   if (!tombCenter) return;
+  if (!_tombDirPlaced && _dirGLTF) { _spawnDirAt(tombCenter); _tombDirPlaced = true; }
   if (petitTombScanState === 'scanning' || petitTombScanState === 'result') return;
   if (imamScanState === 'scanning' || imamScanState === 'result') return;
 
@@ -437,7 +488,7 @@ function resetImamScan() {
 /* ========================================================= */
 /* ---- Scan — Entrée principale (position fixe)         ---- */
 /* ========================================================= */
-const ENTREE_POS      = new THREE.Vector3(17.44, 6.6569, 10.675);
+const ENTREE_POS      = new THREE.Vector3(22.411, 6.2587, 9.3035);
 const ENTREE_DIST     = 7;
 const ENTREE_DURATION = 2.5;
 const ENTREE_COOLDOWN = 12;
@@ -574,7 +625,7 @@ function _initLookDrag() {
 /* ========================================================= */
 /* ---- Collisions BVH                                   ---- */
 /* ========================================================= */
-const COLLIDER_NAMES = /Mosquee_Base|Piliers|Poteaux|Cloture|Torons|boxcollider|Tombeaux/i;
+const COLLIDER_NAMES = /Mosquee_Base|Piliers|Poteaux|Cloture|Torons|boxcollider|Tombeaux|Plateforme|land/i;
 
 async function buildColliders() {
   colliders = [];
@@ -608,7 +659,7 @@ function clearDist(dir, maxLen) {
 
 function groundUnder() {
   _rayOrigin.copy(playerPos);
-  raycaster.set(_rayOrigin, _down); raycaster.far = EYE_HEIGHT + 2;
+  raycaster.set(_rayOrigin, _down); raycaster.far = 40;
   const h = raycaster.intersectObjects(colliders, false);
   return h.length ? h[0].point.y + EYE_HEIGHT : -Infinity;
 }
@@ -718,6 +769,55 @@ function _initControls() {
 }
 
 /* ========================================================= */
+/* ---- Portails porte ↔ toit                            ---- */
+/* ========================================================= */
+// Conversion Blender→Three.js : X=BX, Y=BZ, Z=-BY
+const PORTAL_A_TRIGGER = new THREE.Vector3(17.07,  5.789,  -5.3612); // porte du bas
+const PORTAL_B_TRIGGER = new THREE.Vector3(13.104, 18.321, -3.5774); // porte du toit
+
+const PORTAL_A_DEST    = new THREE.Vector3(13.104, 19.0,   -3.5774); // atterrit sur le toit
+const PORTAL_B_DEST    = new THREE.Vector3(17.07,  6.5,    -5.3612); // atterrit en bas
+
+const PORTAL_RADIUS       = 2.5;   // distance de déclenchement (unités scène)
+const PORTAL_COOLDOWN_SEC = 2.5;   // délai anti-rebond après téléport
+
+let _portalCooldown = 0;
+
+function _teleportFlash() {
+  const flash = document.createElement('div');
+  flash.style.cssText = 'position:fixed;inset:0;background:#f9d58b;opacity:0;pointer-events:none;z-index:9999;transition:opacity .12s ease';
+  document.body.appendChild(flash);
+  requestAnimationFrame(() => { flash.style.opacity = '0.65'; });
+  setTimeout(() => { flash.style.opacity = '0'; setTimeout(() => flash.remove(), 180); }, 130);
+}
+
+function tickPortals(dt) {
+  if (_portalCooldown > 0) { _portalCooldown -= dt; return; }
+
+  const ax = playerPos.x - PORTAL_A_TRIGGER.x;
+  const az = playerPos.z - PORTAL_A_TRIGGER.z;
+  if (Math.sqrt(ax * ax + az * az) < PORTAL_RADIUS) {
+    playerPos.copy(PORTAL_A_DEST);
+    lookOffsetYaw = 0; lookOffsetPitch = 0;
+    _velY = 0;
+    _portalCooldown = PORTAL_COOLDOWN_SEC;
+    _teleportFlash();
+    return;
+  }
+
+  const bx = playerPos.x - PORTAL_B_TRIGGER.x;
+  const bz = playerPos.z - PORTAL_B_TRIGGER.z;
+  if (Math.sqrt(bx * bx + bz * bz) < PORTAL_RADIUS) {
+    playerPos.copy(PORTAL_B_DEST);
+    lookOffsetYaw = 0; lookOffsetPitch = 0;
+    _velY = 0;
+    _portalCooldown = PORTAL_COOLDOWN_SEC;
+    _teleportFlash();
+    return;
+  }
+}
+
+/* ========================================================= */
 /* ---- Téléportation instantanée                        ---- */
 /* ========================================================= */
 const LIEUX = {
@@ -759,10 +859,33 @@ function tickFPS(dt) {
   }
 
   if (colliders && colliders.length) {
+    // Gravité
+    _velY -= GRAVITY * dt;
+    playerPos.y += _velY * dt;
+
     const floorY = groundUnder();
     if (floorY > -Infinity) {
-      if (playerPos.y < floorY || playerPos.y - floorY < 0.5) playerPos.y = floorY;
+      if (playerPos.y <= floorY) {
+        // Sous le sol : remonter et stopper
+        playerPos.y = floorY;
+        _velY = 0;
+      } else if (playerPos.y - floorY < 0.8) {
+        // Très proche du sol : snap (marche normale)
+        playerPos.y = floorY;
+        _velY = 0;
+      }
+      // Sinon : en l'air, la gravité continue
     }
+
+    // Sécurité : tombé sous le modèle → respawn au départ
+    if (playerPos.y < FALL_DEATH_Y) {
+      playerPos.copy(PLAYER_START);
+      playerYaw = PLAYER_YAW0;
+      lookOffsetYaw = 0; lookOffsetPitch = 0;
+      _velY = 0;
+      _teleportFlash();
+    }
+
     depenetrate();
   }
 
@@ -772,6 +895,8 @@ function tickFPS(dt) {
   M.camera.position.copy(playerPos);
   if (pointLight) pointLight.position.copy(playerPos);
 
+  _tickDirAnim(dt);
+  tickPortals(dt);
   tickTombScan(dt);
   tickPetitTombScan(dt);
   tickImamScan(dt);
@@ -840,11 +965,7 @@ function enter() {
   if (typeof window.stopModelWind === 'function') window.stopModelWind();
   _playInsideSound();
 
-  /* Sphères marqueurs */
-  if (!_markerPetitTomb) { _markerPetitTomb = _makeScanMarker(PETIT_TOMB_POS); }
-  if (!_markerImam)      { _markerImam      = _makeScanMarker(IMAM_POS); }
-  if (!_markerEntree)    { _markerEntree    = _makeScanMarker(ENTREE_POS); }
-  M.scene.add(_markerPetitTomb, _markerImam, _markerEntree);
+  _loadDirModel();
 
   M.setGameUpdate(update);
 }
@@ -855,11 +976,14 @@ function exit() {
   joyInput.x = joyInput.y = 0;
   keys.w = keys.a = keys.s = keys.d = false;
   lookDragId = null; lookOffsetYaw = 0; lookOffsetPitch = 0;
+  _portalCooldown = 0;
+  _velY = 0;
   resetTombScan();
   resetPetitTombScan();
   resetImamScan();
   resetEntreeScan();
-  [_markerPetitTomb, _markerImam, _markerEntree, _markerTomb].forEach(m => { if (m) M.scene.remove(m); });
+  _clearDirMarkers();
+  if (_markerImam) M.scene.remove(_markerImam);
   if (ambLight)   { ambLight.color.set(0xffe8c0); ambLight.intensity = 0.08; ambLight.visible = false; }
   if (pointLight)   pointLight.visible = false;
   hideHud();
