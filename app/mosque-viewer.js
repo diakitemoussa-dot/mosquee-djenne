@@ -378,72 +378,45 @@ loader.load(
     loaded = true;
     if (active && loadingEl) loadingEl.classList.add('hidden');
     if (active) revealStage();                              // affiche le titre puis les boutons
-
-    // Signale que la maquette est prête (débloque le bouton lancer dans main.js)
-    window.dispatchEvent(new CustomEvent('mosque:modelReady'));
-
-    // Préchargements différés en arrière-plan : drone puis piliers
-    // (non-bloquants — l'utilisateur peut interagir dès maintenant)
-    setTimeout(() => _preloadBackground(), 500);
   },
   (xhr) => {
-    if (xhr.total) {
+    if (loadingEl && xhr.total) {
       const pct = Math.round((xhr.loaded / xhr.total) * 100);
-      // Barre de chargement dans la scène mosquée
-      if (loadingEl) {
-        const b = loadingEl.querySelector('b');
-        if (b) b.textContent = pct + '%';
-      }
-      // Progression dans le bouton lancer (intro)
-      window.dispatchEvent(new CustomEvent('mosque:modelProgress', { detail: pct }));
+      const b = loadingEl.querySelector('b');
+      if (b) b.textContent = pct + '%';
     }
   },
   (err) => console.error('Erreur chargement maquette GLB :', err)
 );
 
-/* ---------- Préchargement différé (drone + piliers) ---------- */
-let _piliersLoaded = false;
+/* ---------- Chargement Piliers + Tapis_Priere (Draco) ---------- */
+loader.load(
+  'assets/models/piliers-interieur.glb',
+  (gltf) => {
+    gltf.scene.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow    = true;
+      o.receiveShadow = true;
+    });
+    scene.add(gltf.scene);
+  },
+  null,
+  (err) => console.error('Erreur chargement piliers-interieur.glb :', err)
+);
 
-function _preloadBackground() {
-  // 1. drone.glb — préchargé pour éviter le freeze au 1er clic GAME
-  loader.load('assets/models/drone.glb', () => {}, null,
-    (err) => console.warn('Préchargement drone.glb :', err));
-
-  // 2. boxcollider — petit fichier, chargé ici
-  loader.load(
-    'assets/models/boxcollider.glb',
-    (gltf) => {
-      gltf.scene.traverse((o) => {
-        if (!o.isMesh) return;
-        o.visible = false;
-      });
-      scene.add(gltf.scene);
-    },
-    null,
-    (err) => console.error('Erreur chargement boxcollider.glb :', err)
-  );
-
-  // 3. piliers-interieur — chargé en dernier (uniquement utile en mode Sanctuaire)
-  setTimeout(() => loadPiliers(), 2000);
-}
-
-function loadPiliers() {
-  if (_piliersLoaded) return;
-  _piliersLoaded = true;
-  loader.load(
-    'assets/models/piliers-interieur.glb',
-    (gltf) => {
-      gltf.scene.traverse((o) => {
-        if (!o.isMesh) return;
-        o.castShadow    = true;
-        o.receiveShadow = true;
-      });
-      scene.add(gltf.scene);
-    },
-    null,
-    (err) => { _piliersLoaded = false; console.error('Erreur chargement piliers-interieur.glb :', err); }
-  );
-}
+/* ---------- Chargement boxcollider mis à jour (Draco) ---------- */
+loader.load(
+  'assets/models/boxcollider.glb',
+  (gltf) => {
+    gltf.scene.traverse((o) => {
+      if (!o.isMesh) return;
+      o.visible = false;   // invisible, utilisé uniquement pour les collisions BVH
+    });
+    scene.add(gltf.scene);
+  },
+  null,
+  (err) => console.error('Erreur chargement boxcollider.glb :', err)
+);
 
 /* ---------- Redimensionnement plein écran ---------- */
 const resize = () => {

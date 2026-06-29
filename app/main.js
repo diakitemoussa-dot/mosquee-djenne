@@ -568,22 +568,6 @@
     if (el.matches('[data-action="game"]')) return;
     uiClick();
   });
-  // Bloque le bouton jusqu'à ce que la maquette 3D soit chargée
-  const launchStrong = launchBtn.querySelector('.cta-text strong');
-  const _origLabel = launchStrong ? launchStrong.textContent : null;
-  launchBtn.disabled = true;
-  if (launchStrong) launchStrong.textContent = 'CHARGEMENT… 0%';
-
-  window.addEventListener('mosque:modelProgress', (e) => {
-    if (launchBtn.disabled && launchStrong)
-      launchStrong.textContent = `CHARGEMENT… ${e.detail}%`;
-  });
-
-  window.addEventListener('mosque:modelReady', () => {
-    launchBtn.disabled = false;
-    if (launchStrong && _origLabel) launchStrong.textContent = _origLabel;
-  }, { once: true });
-
   launchBtn.addEventListener('click', async () => {
     launchBtn.disabled = true;
     launchBtn.classList.add('firing');
