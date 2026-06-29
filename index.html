@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="styles/mosque.css?v=3" />
   <link rel="stylesheet" href="styles/drone-game.css?v=3" />
   <link rel="stylesheet" href="styles/sanctuary.css?v=1" />
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
   <script type="importmap">
     {
       "imports": {
@@ -631,6 +632,16 @@
         <button id="arQuit" class="ar-quit" type="button" aria-label="Quitter AR">✕</button>
         <p id="arHint" class="ar-hint"></p>
       </div>
+
+      <!-- model-viewer caché — gère AR Android (WebXR/Scene Viewer) + iOS (Quick Look) -->
+      <model-viewer
+        id="mosqueArViewer"
+        src="assets/models/djenne-mosque-only.glb"
+        ar
+        ar-modes="webxr scene-viewer quick-look"
+        style="position:fixed;top:0;left:0;width:100%;height:100%;opacity:0;pointer-events:none;z-index:-1;"
+        loading="eager">
+      </model-viewer>
     </div>
 
   </main>
