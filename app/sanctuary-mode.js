@@ -93,6 +93,10 @@ const WALK_SPEED      = 3.0;
 const TURN_SPEED      = 0.85;
 const CAPSULE_R       = 0.55;
 const EYE_HEIGHT      = 1.7;
+const GRAVITY         = 18;    // unités/s²
+const FALL_DEATH_Y    = -15;   // respawn si tombé sous ce seuil
+
+let _velY = 0;
 
 /* ---------- Regard libre ---------- */
 const LOOK_SENSITIVITY  = 0.004;
@@ -574,7 +578,7 @@ function _initLookDrag() {
 /* ========================================================= */
 /* ---- Collisions BVH                                   ---- */
 /* ========================================================= */
-const COLLIDER_NAMES = /Mosquee_Base|Piliers|Poteaux|Cloture|Torons|boxcollider|Tombeaux/i;
+const COLLIDER_NAMES = /Mosquee_Base|Piliers|Poteaux|Cloture|Torons|boxcollider|Tombeaux|Plateforme|land/i;
 
 async function buildColliders() {
   colliders = [];
@@ -608,7 +612,7 @@ function clearDist(dir, maxLen) {
 
 function groundUnder() {
   _rayOrigin.copy(playerPos);
-  raycaster.set(_rayOrigin, _down); raycaster.far = EYE_HEIGHT + 2;
+  raycaster.set(_rayOrigin, _down); raycaster.far = 40;
   const h = raycaster.intersectObjects(colliders, false);
   return h.length ? h[0].point.y + EYE_HEIGHT : -Infinity;
 }
@@ -748,6 +752,7 @@ function tickPortals(dt) {
   if (Math.sqrt(ax * ax + az * az) < PORTAL_RADIUS) {
     playerPos.copy(PORTAL_A_DEST);
     lookOffsetYaw = 0; lookOffsetPitch = 0;
+    _velY = 0;
     _portalCooldown = PORTAL_COOLDOWN_SEC;
     _teleportFlash();
     return;
@@ -758,6 +763,7 @@ function tickPortals(dt) {
   if (Math.sqrt(bx * bx + bz * bz) < PORTAL_RADIUS) {
     playerPos.copy(PORTAL_B_DEST);
     lookOffsetYaw = 0; lookOffsetPitch = 0;
+    _velY = 0;
     _portalCooldown = PORTAL_COOLDOWN_SEC;
     _teleportFlash();
     return;
@@ -806,10 +812,33 @@ function tickFPS(dt) {
   }
 
   if (colliders && colliders.length) {
+    // Gravité
+    _velY -= GRAVITY * dt;
+    playerPos.y += _velY * dt;
+
     const floorY = groundUnder();
     if (floorY > -Infinity) {
-      if (playerPos.y < floorY || playerPos.y - floorY < 0.5) playerPos.y = floorY;
+      if (playerPos.y <= floorY) {
+        // Sous le sol : remonter et stopper
+        playerPos.y = floorY;
+        _velY = 0;
+      } else if (playerPos.y - floorY < 0.8) {
+        // Très proche du sol : snap (marche normale)
+        playerPos.y = floorY;
+        _velY = 0;
+      }
+      // Sinon : en l'air, la gravité continue
     }
+
+    // Sécurité : tombé sous le modèle → respawn au départ
+    if (playerPos.y < FALL_DEATH_Y) {
+      playerPos.copy(PLAYER_START);
+      playerYaw = PLAYER_YAW0;
+      lookOffsetYaw = 0; lookOffsetPitch = 0;
+      _velY = 0;
+      _teleportFlash();
+    }
+
     depenetrate();
   }
 
@@ -904,6 +933,7 @@ function exit() {
   keys.w = keys.a = keys.s = keys.d = false;
   lookDragId = null; lookOffsetYaw = 0; lookOffsetPitch = 0;
   _portalCooldown = 0;
+  _velY = 0;
   resetTombScan();
   resetPetitTombScan();
   resetImamScan();
