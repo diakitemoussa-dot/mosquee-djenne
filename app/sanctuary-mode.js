@@ -5,27 +5,71 @@
    ========================================================== */
 import * as THREE from 'three';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
-/* ---------- Sphères marqueurs de scan ---------- */
+/* ---------- Sphère marqueur (IMAM uniquement) ---------- */
 const _scanSphereMat = new THREE.MeshBasicMaterial({
   color: 0x9b30ff, transparent: true, opacity: 0.35, depthWrite: false
 });
 const _scanSphereGeo = new THREE.SphereGeometry(0.55, 16, 12);
-
 const _makeScanMarker = (pos) => {
   const mesh = new THREE.Mesh(_scanSphereGeo, _scanSphereMat.clone());
   mesh.position.copy(pos);
   return mesh;
 };
+let _markerImam = null;
 
-let _markerPetitTomb = null;
-let _markerImam      = null;
-let _markerEntree    = null;
-let _markerTomb      = null;
+/* ---------- Indicateurs direction (GLB animé) ---------- */
+const _draco = new DRACOLoader();
+_draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+const _gltfDir = new GLTFLoader();
+_gltfDir.setDRACOLoader(_draco);
+
+let   _dirGLTF       = null;
+const _dirNodes      = [];
+const _dirMixers     = [];
+let   _tombDirPlaced = false;
+
+function _spawnDirAt(pos) {
+  if (!_dirGLTF || !M?.scene) return;
+  const root = _dirGLTF.scene.clone(true);
+  root.position.set(pos.x, pos.y + 0.4, pos.z);
+  M.scene.add(root);
+  _dirNodes.push(root);
+  if (_dirGLTF.animations.length) {
+    const mx = new THREE.AnimationMixer(root);
+    mx.clipAction(_dirGLTF.animations[0]).play();
+    _dirMixers.push(mx);
+  }
+}
+
+function _clearDirMarkers() {
+  _dirNodes.forEach(n => M?.scene.remove(n));
+  _dirNodes.length = 0;
+  _dirMixers.forEach(mx => mx.stopAllAction());
+  _dirMixers.length = 0;
+  _tombDirPlaced = false;
+}
+
+function _loadDirModel() {
+  const _doSpawn = () => {
+    _spawnDirAt(PETIT_TOMB_POS);
+    _spawnDirAt(ENTREE_POS);
+    _spawnDirAt(PORTAL_A_TRIGGER);
+    _spawnDirAt(PORTAL_B_TRIGGER);
+    if (tombCenter) { _spawnDirAt(tombCenter); _tombDirPlaced = true; }
+  };
+  if (_dirGLTF) { _doSpawn(); return; }
+  _gltfDir.load('assets/models/direction.glb', (gltf) => {
+    _dirGLTF = gltf;
+    _doSpawn();
+  });
+}
 
 /* ---------- Son scanner ---------- */
 const _scannerSound = new Audio('assets/audio/scanner_sound.mp3');
@@ -219,15 +263,13 @@ function _searchTomb() {
     }
   });
   if (!found) { tombCenter = null; return; }
-  if (!_markerTomb && M?.scene) {
-    _markerTomb = _makeScanMarker(tombCenter);
-    M.scene.add(_markerTomb);
-  }
+  _tombDirPlaced = false; // sera placé dans tickTombScan dès que le GLB est prêt
 }
 
 function tickTombScan(dt) {
   _searchTomb();
   if (!tombCenter) return;
+  if (!_tombDirPlaced && _dirGLTF) { _spawnDirAt(tombCenter); _tombDirPlaced = true; }
   if (petitTombScanState === 'scanning' || petitTombScanState === 'result') return;
   if (imamScanState === 'scanning' || imamScanState === 'result') return;
 
@@ -848,6 +890,7 @@ function tickFPS(dt) {
   M.camera.position.copy(playerPos);
   if (pointLight) pointLight.position.copy(playerPos);
 
+  for (const mx of _dirMixers) mx.update(dt);
   tickPortals(dt);
   tickTombScan(dt);
   tickPetitTombScan(dt);
@@ -917,11 +960,10 @@ function enter() {
   if (typeof window.stopModelWind === 'function') window.stopModelWind();
   _playInsideSound();
 
-  /* Sphères marqueurs */
-  if (!_markerPetitTomb) { _markerPetitTomb = _makeScanMarker(PETIT_TOMB_POS); }
-  if (!_markerImam)      { _markerImam      = _makeScanMarker(IMAM_POS); }
-  if (!_markerEntree)    { _markerEntree    = _makeScanMarker(ENTREE_POS); }
-  M.scene.add(_markerPetitTomb, _markerImam, _markerEntree);
+  /* Marqueurs */
+  if (!_markerImam) { _markerImam = _makeScanMarker(IMAM_POS); }
+  M.scene.add(_markerImam);
+  _loadDirModel();
 
   M.setGameUpdate(update);
 }
@@ -938,7 +980,8 @@ function exit() {
   resetPetitTombScan();
   resetImamScan();
   resetEntreeScan();
-  [_markerPetitTomb, _markerImam, _markerEntree, _markerTomb].forEach(m => { if (m) M.scene.remove(m); });
+  _clearDirMarkers();
+  if (_markerImam) M.scene.remove(_markerImam);;
   if (ambLight)   { ambLight.color.set(0xffe8c0); ambLight.intensity = 0.08; ambLight.visible = false; }
   if (pointLight)   pointLight.visible = false;
   hideHud();
