@@ -815,6 +815,25 @@ const _writingSound = new Audio('assets/audio/writing-sound.mp3');
 _writingSound.preload = 'auto';
 _writingSound.volume  = 0.7;
 
+function _playWritingLoop(part) {
+  // Compte les lettres du bloc pour calculer la durée exacte de l'animation
+  const block = document.querySelector(`[data-info="${part}"]`);
+  const charCount = block
+    ? block.textContent.replace(/\s/g, '').length
+    : 120;
+  const durationMs = Math.ceil(charCount * 28 + 800); // 28ms/lettre + buffer
+
+  _writingSound.loop = true;
+  _writingSound.currentTime = 0;
+  _writingSound.play().catch(() => {});
+
+  setTimeout(() => {
+    _writingSound.loop = false;
+    _writingSound.pause();
+    _writingSound.currentTime = 0;
+  }, durationMs);
+}
+
 /* Déverrouillage iOS */
 document.addEventListener('audioUnlock', () => {
   _gameBtnSound.play().catch(() => {}); _gameBtnSound.pause(); _gameBtnSound.currentTime = 0;
@@ -923,21 +942,21 @@ stage.querySelectorAll('.mq-rad-item').forEach((item) => {
     window.dispatchEvent(new CustomEvent('mosque:focus', { detail: part }));
     if (part === 'facade') {
       _actionSound.currentTime = 0; _actionSound.play().catch(() => {});
-      setTimeout(() => { _writingSound.currentTime = 0; _writingSound.play().catch(() => {}); }, 1300);
+      setTimeout(() => _playWritingLoop('facade'), 1300);
       flyToFacade();                                  // zoom de face + infos
     } else if (part === 'minarets') {
       _actionSound.currentTime = 0; _actionSound.play().catch(() => {});
-      setTimeout(() => { _writingSound.currentTime = 0; _writingSound.play().catch(() => {}); }, 1300);
+      setTimeout(() => _playWritingLoop('minarets'), 1300);
       hideInfo();
       flyToMinarets();                                // vol caméra vers les minarets
     } else if (part === 'ventilation') {
       _actionSound.currentTime = 0; _actionSound.play().catch(() => {});
-      setTimeout(() => { _writingSound.currentTime = 0; _writingSound.play().catch(() => {}); }, 1300);
+      setTimeout(() => _playWritingLoop('ventilation'), 1300);
       hideInfo();
       flyToVentilation();                             // vol caméra vers les canaris (ventilation)
     } else if (part === 'cour') {
       _actionSound.currentTime = 0; _actionSound.play().catch(() => {});
-      setTimeout(() => { _writingSound.currentTime = 0; _writingSound.play().catch(() => {}); }, 1300);
+      setTimeout(() => _playWritingLoop('cour'), 1300);
       flyToCour();                                    // déplacement caméra vers la cour extérieure
     } else {
       hideInfo();
