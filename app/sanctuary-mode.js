@@ -38,7 +38,7 @@ let   _tombDirPlaced = false;
 function _spawnDirAt(pos) {
   if (!_dirGLTF || !M?.scene) return;
   const root = _dirGLTF.scene.clone(true);
-  root.position.set(pos.x, pos.y + 0.4, pos.z);
+  root.position.copy(pos);
   M.scene.add(root);
   _dirNodes.push(root);
   if (_dirGLTF.animations.length) {
@@ -60,8 +60,6 @@ function _loadDirModel() {
   const _doSpawn = () => {
     _spawnDirAt(PETIT_TOMB_POS);
     _spawnDirAt(ENTREE_POS);
-    _spawnDirAt(PORTAL_A_TRIGGER);
-    _spawnDirAt(PORTAL_B_TRIGGER);
     if (tombCenter) { _spawnDirAt(tombCenter); _tombDirPlaced = true; }
   };
   if (_dirGLTF) { _doSpawn(); return; }
