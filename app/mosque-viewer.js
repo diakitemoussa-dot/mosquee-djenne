@@ -596,7 +596,6 @@ function showInfo(part){
     if (on) activeBlock = b;
   });
   splitChars(activeBlock);                          // prépare la cascade lettre par lettre
-  _writingSound.currentTime = 0; _writingSound.play().catch(() => {});
   if (ui) {
     ui.classList.add('info-open');           // mode "fiche" -> autres boutons cachés
     ui.classList.toggle('info-facade', part === 'facade');   // bouton crépissage : façade seulement
@@ -924,17 +923,21 @@ stage.querySelectorAll('.mq-rad-item').forEach((item) => {
     window.dispatchEvent(new CustomEvent('mosque:focus', { detail: part }));
     if (part === 'facade') {
       _actionSound.currentTime = 0; _actionSound.play().catch(() => {});
+      setTimeout(() => { _writingSound.currentTime = 0; _writingSound.play().catch(() => {}); }, 1300);
       flyToFacade();                                  // zoom de face + infos
     } else if (part === 'minarets') {
       _actionSound.currentTime = 0; _actionSound.play().catch(() => {});
+      setTimeout(() => { _writingSound.currentTime = 0; _writingSound.play().catch(() => {}); }, 1300);
       hideInfo();
       flyToMinarets();                                // vol caméra vers les minarets
     } else if (part === 'ventilation') {
       _actionSound.currentTime = 0; _actionSound.play().catch(() => {});
+      setTimeout(() => { _writingSound.currentTime = 0; _writingSound.play().catch(() => {}); }, 1300);
       hideInfo();
       flyToVentilation();                             // vol caméra vers les canaris (ventilation)
     } else if (part === 'cour') {
       _actionSound.currentTime = 0; _actionSound.play().catch(() => {});
+      setTimeout(() => { _writingSound.currentTime = 0; _writingSound.play().catch(() => {}); }, 1300);
       flyToCour();                                    // déplacement caméra vers la cour extérieure
     } else {
       hideInfo();
