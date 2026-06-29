@@ -718,6 +718,53 @@ function _initControls() {
 }
 
 /* ========================================================= */
+/* ---- Portails porte ↔ toit                            ---- */
+/* ========================================================= */
+// Conversion Blender→Three.js : X=BX, Y=BZ, Z=-BY
+const PORTAL_A_TRIGGER = new THREE.Vector3(17.07,  5.789,  -5.3612); // porte du bas
+const PORTAL_B_TRIGGER = new THREE.Vector3(13.104, 18.321, -3.5774); // porte du toit
+
+const PORTAL_A_DEST    = new THREE.Vector3(13.104, 19.0,   -3.5774); // atterrit sur le toit
+const PORTAL_B_DEST    = new THREE.Vector3(17.07,  6.5,    -5.3612); // atterrit en bas
+
+const PORTAL_RADIUS       = 2.5;   // distance de déclenchement (unités scène)
+const PORTAL_COOLDOWN_SEC = 2.5;   // délai anti-rebond après téléport
+
+let _portalCooldown = 0;
+
+function _teleportFlash() {
+  const flash = document.createElement('div');
+  flash.style.cssText = 'position:fixed;inset:0;background:#f9d58b;opacity:0;pointer-events:none;z-index:9999;transition:opacity .12s ease';
+  document.body.appendChild(flash);
+  requestAnimationFrame(() => { flash.style.opacity = '0.65'; });
+  setTimeout(() => { flash.style.opacity = '0'; setTimeout(() => flash.remove(), 180); }, 130);
+}
+
+function tickPortals(dt) {
+  if (_portalCooldown > 0) { _portalCooldown -= dt; return; }
+
+  const ax = playerPos.x - PORTAL_A_TRIGGER.x;
+  const az = playerPos.z - PORTAL_A_TRIGGER.z;
+  if (Math.sqrt(ax * ax + az * az) < PORTAL_RADIUS) {
+    playerPos.copy(PORTAL_A_DEST);
+    lookOffsetYaw = 0; lookOffsetPitch = 0;
+    _portalCooldown = PORTAL_COOLDOWN_SEC;
+    _teleportFlash();
+    return;
+  }
+
+  const bx = playerPos.x - PORTAL_B_TRIGGER.x;
+  const bz = playerPos.z - PORTAL_B_TRIGGER.z;
+  if (Math.sqrt(bx * bx + bz * bz) < PORTAL_RADIUS) {
+    playerPos.copy(PORTAL_B_DEST);
+    lookOffsetYaw = 0; lookOffsetPitch = 0;
+    _portalCooldown = PORTAL_COOLDOWN_SEC;
+    _teleportFlash();
+    return;
+  }
+}
+
+/* ========================================================= */
 /* ---- Téléportation instantanée                        ---- */
 /* ========================================================= */
 const LIEUX = {
@@ -772,6 +819,7 @@ function tickFPS(dt) {
   M.camera.position.copy(playerPos);
   if (pointLight) pointLight.position.copy(playerPos);
 
+  tickPortals(dt);
   tickTombScan(dt);
   tickPetitTombScan(dt);
   tickImamScan(dt);
@@ -855,6 +903,7 @@ function exit() {
   joyInput.x = joyInput.y = 0;
   keys.w = keys.a = keys.s = keys.d = false;
   lookDragId = null; lookOffsetYaw = 0; lookOffsetPitch = 0;
+  _portalCooldown = 0;
   resetTombScan();
   resetPetitTombScan();
   resetImamScan();
