@@ -154,9 +154,9 @@ scanPanel.innerHTML = `
     <div class="dg-scan-result-header">◈ ANALYSE COMPLÈTE</div>
     <p class="mq-info-title" style="font-size:.9rem;margin:.4em auto .5em;letter-spacing:1px;">ŒUFS D'AUTRUCHE</p>
     <ul class="mq-info-list">
-      <li>Ornement des minarets depuis le <strong>XIIIe siècle</strong></li>
-      <li>Symbolisent <strong>fertilité, pureté et éternité</strong> dans l'islam</li>
-      <li>Servent de <strong>repères géographiques</strong> aux voyageurs du Sahel</li>
+      <li>Coiffent la <strong>pointe de chaque tour</strong> de la façade de la prière</li>
+      <li>On leur associe souvent une idée de <strong>pureté et de fécondité</strong></li>
+      <li>Refaits avec le bâtiment lors du <strong>grand crépissage</strong> chaque année</li>
     </ul>
     <button class="dg-scan-close">FERMER ✕</button>
   </div>

@@ -183,12 +183,12 @@ snScanResult.id = 'snScanResult';
 snScanResult.className = 'sn-scan-result';
 snScanResult.innerHTML = `
   <div class="sn-scan-result-header">◈ ANALYSE COMPLÈTE</div>
-  <p class="sn-scan-result-title">TOMBEAUX SACRÉS</p>
+  <p class="sn-scan-result-title">TOMBEAUX</p>
   <ul class="sn-scan-list">
-    <li>Renfermant les restes d'<strong>Almamy Ismaila</strong> et de deux saints hommes du XIIIe siècle</li>
-    <li>Lieu de <strong>pèlerinage et de baraka</strong> (bénédiction divine) pour les fidèles de toute la région</li>
-    <li>Selon la tradition, prier à proximité des tombeaux <strong>amplifie l'exaucement des vœux</strong></li>
-    <li>Les tombeaux sont recouverts de <strong>banco sacré</strong>, rejoint chaque année lors du grand crépissage</li>
+    <li>Sur la terrasse, devant le mur de la prière, se trouvent <strong>deux tombes</strong></li>
+    <li>La plus grande abrite <strong>Almany Ismaïla</strong>, un imam important de Djenné au <strong>XVIIIe siècle</strong></li>
+    <li>Selon la tradition, des fidèles viennent y prier et demander une bénédiction (<strong>baraka</strong>)</li>
+    <li>Ce sont de simples tombes en terre, entretenues comme le reste du bâtiment</li>
   </ul>
   <button class="sn-scan-close" id="snScanClose">FERMER ✕</button>
 `;
@@ -287,10 +287,10 @@ snPetitScanResult.innerHTML = `
   <div class="sn-scan-result-header">◈ ANALYSE COMPLÈTE</div>
   <p class="sn-scan-result-title">PETIT TOMBEAU</p>
   <ul class="sn-scan-list">
-    <li>Sépulture d'un <strong>marabout anonyme</strong> dont le nom s'est perdu au fil des siècles</li>
-    <li>Placé à l'intérieur de la mosquée pour permettre aux fidèles de <strong>prier en sa présence</strong> jour et nuit</li>
-    <li>Les habitants de Djenné y déposent des <strong>offrandes de kola et d'encens</strong> pour obtenir intercession</li>
-    <li>Sa modestie symbolise l'idéal soufi : <strong>se fondre dans la pierre et le banco</strong>, loin de toute ostentation</li>
+    <li>C'est la <strong>seconde tombe</strong>, plus petite, posée sur la même terrasse</li>
+    <li>On sait <strong>mal qui y repose</strong> : son nom ne nous est pas parvenu avec certitude</li>
+    <li>Elle se tient tout près du mur de la prière, là où passent les fidèles</li>
+    <li>Faite de terre, elle reste simple et sans décor, comme l'ensemble du lieu</li>
   </ul>
   <button class="sn-scan-close" id="snPetitScanClose">FERMER ✕</button>
 `;
@@ -364,10 +364,10 @@ snImamScanResult.innerHTML = `
   <div class="sn-scan-result-header">◈ ANALYSE COMPLÈTE</div>
   <p class="sn-scan-result-title">PLACE DE L'IMAM</p>
   <ul class="sn-scan-list">
-    <li>L'imam dirige la prière depuis ce mihrab orienté vers <strong>La Mecque (qibla)</strong>, axe sacré de toute mosquée</li>
-    <li>À Djenné, l'imam est aussi <strong>gardien de la mémoire orale</strong> : il transmet les hadiths et les généalogies des familles fondatrices</li>
-    <li>Le vendredi, sa voix porte la <strong>khouṭba</strong> (sermon) à des centaines de fidèles massés dans la cour et les ruelles alentour</li>
-    <li>Debout sur ce sol de banco, des imams se succèdent depuis le <strong>XIIIe siècle</strong> sans interruption</li>
+    <li>L'imam dirige la prière depuis le <strong>mihrab</strong>, une niche tournée vers <strong>La Mecque (qibla)</strong></li>
+    <li>Le vendredi, il prononce la <strong>khouṭba</strong> (le sermon) devant de nombreux fidèles</li>
+    <li>Les jours de grande affluence, la foule déborde dans la cour et les ruelles autour</li>
+    <li>À Djenné, des imams se succèdent à la tête de la mosquée depuis très longtemps</li>
   </ul>
   <button class="sn-scan-close" id="snImamScanClose">FERMER ✕</button>
 `;
@@ -453,10 +453,10 @@ snEntreeScanResult.innerHTML = `
   <div class="sn-scan-result-header">◈ ANALYSE COMPLÈTE</div>
   <p class="sn-scan-result-title">ENTRÉE PRINCIPALE</p>
   <ul class="sn-scan-list">
-    <li>Seul seuil par lequel les <strong>fidèles entrent pieds nus</strong> : franchir ce pas, c'est quitter le monde profane pour l'espace sacré</li>
-    <li>La porte est orientée au <strong>nord</strong> ; les hommes entrent par ici, les femmes par une entrée latérale, selon la tradition locale</li>
-    <li>Les murs épais de <strong>banco</strong> autour de cette ouverture absorbent la chaleur et maintiennent la fraîcheur intérieure même en saison sèche</li>
-    <li>Chaque année lors du <strong>crépissage collectif</strong>, cette façade est la première restaurée — symbole de l'honneur de toute la communauté</li>
+    <li>Avant d'entrer, les <strong>fidèles retirent leurs chaussures</strong> : on passe du dehors à l'espace de prière</li>
+    <li>L'entrée principale se trouve du <strong>côté nord</strong> du bâtiment</li>
+    <li>Les murs épais en <strong>banco</strong> gardent l'intérieur frais, même en pleine saison sèche</li>
+    <li>Au début du grand crépissage, une <strong>course</strong> a lieu : on rivalise pour apporter le premier mortier à la mosquée</li>
   </ul>
   <button class="sn-scan-close" id="snEntreeScanClose">FERMER ✕</button>
 `;
