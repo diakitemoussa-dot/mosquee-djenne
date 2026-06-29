@@ -807,6 +807,10 @@ const _gameBtnSound = new Audio('assets/audio/soundclic_for_btn_Game.mp3');
 _gameBtnSound.preload = 'auto';
 _gameBtnSound.volume  = 0.9;
 
+const _actionSound = new Audio('assets/audio/action-sound.mp3');
+_actionSound.preload = 'auto';
+_actionSound.volume  = 0.85;
+
 /* Déverrouillage iOS */
 document.addEventListener('audioUnlock', () => {
   _gameBtnSound.play().catch(() => {}); _gameBtnSound.pause(); _gameBtnSound.currentTime = 0;
@@ -914,14 +918,18 @@ stage.querySelectorAll('.mq-rad-item').forEach((item) => {
     setMenu(false);                                   // referme le menu après sélection
     window.dispatchEvent(new CustomEvent('mosque:focus', { detail: part }));
     if (part === 'facade') {
+      _actionSound.currentTime = 0; _actionSound.play().catch(() => {});
       flyToFacade();                                  // zoom de face + infos
     } else if (part === 'minarets') {
+      _actionSound.currentTime = 0; _actionSound.play().catch(() => {});
       hideInfo();
       flyToMinarets();                                // vol caméra vers les minarets
     } else if (part === 'ventilation') {
+      _actionSound.currentTime = 0; _actionSound.play().catch(() => {});
       hideInfo();
       flyToVentilation();                             // vol caméra vers les canaris (ventilation)
     } else if (part === 'cour') {
+      _actionSound.currentTime = 0; _actionSound.play().catch(() => {});
       flyToCour();                                    // déplacement caméra vers la cour extérieure
     } else {
       hideInfo();
