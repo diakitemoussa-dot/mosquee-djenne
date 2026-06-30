@@ -518,25 +518,28 @@
   .mq-info.show .mq-info-block.on .mq-char{ animation: none; }
 }
 
-/* ---------- Petit écran : cartes empilées, modèle visible en bas ---------- */
+/* ---------- Petit écran : cartes en bas, modèle visible en haut ---------- */
 @media (max-width: 899px){
   .mq-info{
-    top: 0;
+    top: auto;
+    bottom: 0;
     left: 0;
     right: 0;
     width: 100%;
-    transform: translateY(-14px);
-    max-height: 70vh;
+    transform: translateY(14px);
+    max-height: 62vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 12px;
+    padding-bottom: 56px; /* espace bouton fermer */
     pointer-events: auto;
     text-shadow: none;
+    /* fondu douce depuis le bas du modèle */
+    background: linear-gradient(to bottom, transparent 0%, rgba(30,18,42,0.55) 18%);
   }
   .mq-info.show{ transform: translateY(0); }
 
   .mq-info-title{
-    margin-top: clamp(10px, 3vh, 22px);
+    margin-top: clamp(8px, 2vh, 16px);
     padding: 0 12px;
   }
 
