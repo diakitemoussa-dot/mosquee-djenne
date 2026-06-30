@@ -518,6 +518,55 @@
   .mq-info.show .mq-info-block.on .mq-char{ animation: none; }
 }
 
+/* ---------- Petit écran : cartes empilées, modèle visible en bas ---------- */
+@media (max-width: 899px){
+  .mq-info{
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    transform: translateY(-14px);
+    max-height: 70vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 12px;
+    pointer-events: auto;
+    text-shadow: none;
+  }
+  .mq-info.show{ transform: translateY(0); }
+
+  .mq-info-title{
+    margin-top: clamp(10px, 3vh, 22px);
+    padding: 0 12px;
+  }
+
+  .mq-info-list{
+    max-width: none;
+    padding: 0 12px;
+    gap: .55em;
+  }
+
+  .mq-info-list li{
+    background: rgba(85, 65, 93, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(249, 213, 139, 0.28);
+    border-radius: 16px;
+    padding: .75em 1em .75em 1em;
+    text-shadow: none;
+    box-shadow: 0 2px 14px rgba(0,0,0,.35);
+    font-size: clamp(.88rem, 3.8vw, 1rem);
+  }
+
+  .mq-info-list li::before{ display: none; }
+
+  .mq-info-list b, .mq-info-list strong{
+    display: block;
+    margin-bottom: .2em;
+    text-shadow: none;
+  }
+}
+
 /* ---------- Grand écran : faits éclatés autour du modèle ---------- */
 @media (min-width: 900px){
   .mq-info{ inset: 0; width: auto; transform: none; }   /* couvre tout l'écran -> ancrages bas/haut OK */
