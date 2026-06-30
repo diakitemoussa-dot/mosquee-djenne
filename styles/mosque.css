@@ -521,20 +521,20 @@
 /* ---------- Petit écran : drawer bas compact, modèle visible au-dessus ---------- */
 @media (max-width: 899px){
   .mq-info{
-    top: auto;
-    bottom: 0;
+    top: 0;
+    bottom: auto;
     left: 0;
     right: 0;
     width: 100%;
-    transform: translateY(14px);
-    /* 42vh = laisse 58vh pour voir le modèle */
+    transform: translateY(-14px);
+    /* 42vh = laisse 58vh pour voir le modèle en bas */
     max-height: 42vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 52px;
+    padding-bottom: 8px;
     pointer-events: auto;
     text-shadow: none;
-    background: linear-gradient(to bottom,
+    background: linear-gradient(to top,
       transparent 0%,
       rgba(22,12,32,0.82) 10%,
       rgba(22,12,32,0.92) 100%);
