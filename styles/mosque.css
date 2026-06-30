@@ -457,18 +457,21 @@
 .mq-info-list li{
   position: relative;
   padding: .55em 1em .55em 1.4em;
-  color: #3a2645;
+  color: #edd9a3;
   text-align: left;
   font-size: clamp(.9rem, 2.4vw, 1.05rem);
   line-height: 1.55;
-  font-weight: 500;
-  background: rgba(255,255,255,.55);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,.75);
-  box-shadow: 0 2px 16px rgba(85,65,93,.12), 0 1px 4px rgba(255,255,255,.6) inset;
-  text-shadow: 0 1px 3px rgba(255,255,255,.6);
+  font-weight: 700;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  text-shadow:
+    1px 1px 0 rgba(85,65,93,.8),
+    2px 2px 0 rgba(85,65,93,.5),
+    3px 3px 8px rgba(0,0,0,.35);
 }
 .mq-info-list li::before{
   content: '';
@@ -481,7 +484,16 @@
   background: var(--gold);
   box-shadow: 0 0 8px #f9d58baa;
 }
-.mq-info-list b, .mq-info-list strong{ font-weight: 700; color: #F9D58B; }
+.mq-info-list b, .mq-info-list strong{
+  font-weight: 800;
+  color: #f9d58b;
+  text-shadow:
+    1px 1px 0 #7a5a2d,
+    2px 2px 0 #7a5a2d,
+    3px 3px 0 #6b4e27,
+    4px 4px 0 #5c4220,
+    5px 5px 14px rgba(0,0,0,.55);
+}
 
 /* Révélation "bounce" lettre par lettre (style After Effects) :
    chaque caractère arrive avec rebond + scale + rotation, en cascade.
