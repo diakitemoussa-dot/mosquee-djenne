@@ -518,7 +518,7 @@
   .mq-info.show .mq-info-block.on .mq-char{ animation: none; }
 }
 
-/* ---------- Petit écran : cartes en bas, modèle visible en haut ---------- */
+/* ---------- Petit écran : drawer bas compact, modèle visible au-dessus ---------- */
 @media (max-width: 899px){
   .mq-info{
     top: auto;
@@ -527,45 +527,49 @@
     right: 0;
     width: 100%;
     transform: translateY(14px);
-    max-height: 62vh;
+    /* 42vh = laisse 58vh pour voir le modèle */
+    max-height: 42vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 56px; /* espace bouton fermer */
+    padding-bottom: 52px;
     pointer-events: auto;
     text-shadow: none;
-    /* fondu douce depuis le bas du modèle */
-    background: linear-gradient(to bottom, transparent 0%, rgba(30,18,42,0.55) 18%);
+    background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(22,12,32,0.82) 10%,
+      rgba(22,12,32,0.92) 100%);
   }
   .mq-info.show{ transform: translateY(0); }
 
   .mq-info-title{
-    margin-top: clamp(8px, 2vh, 16px);
+    margin-top: 6px;
     padding: 0 12px;
+    font-size: clamp(1rem, 4vw, 1.3rem);
   }
 
   .mq-info-list{
     max-width: none;
-    padding: 0 12px;
-    gap: .55em;
+    padding: 0 10px;
+    gap: .4em;
   }
 
   .mq-info-list li{
-    background: rgba(85, 65, 93, 0.72);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(249, 213, 139, 0.28);
-    border-radius: 16px;
-    padding: .75em 1em .75em 1em;
+    background: rgba(85, 65, 93, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(249, 213, 139, 0.22);
+    border-radius: 12px;
+    padding: .5em .9em;
     text-shadow: none;
-    box-shadow: 0 2px 14px rgba(0,0,0,.35);
-    font-size: clamp(.88rem, 3.8vw, 1rem);
+    box-shadow: none;
+    font-size: clamp(.8rem, 3.4vw, .92rem);
+    line-height: 1.4;
   }
 
   .mq-info-list li::before{ display: none; }
 
   .mq-info-list b, .mq-info-list strong{
-    display: block;
-    margin-bottom: .2em;
+    display: inline;
     text-shadow: none;
   }
 }
