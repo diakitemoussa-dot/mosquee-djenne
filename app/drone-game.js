@@ -123,7 +123,9 @@ let scanState     = 'idle';     // 'idle' | 'scanning' | 'cooldown'
 let scanElapsed   = 0;          // temps écoulé dans la zone (animation continue)
 let scanCooldownT = 0;
 let panelShown    = false;      // panel déjà affiché dans ce passage ?
-const SCAN_DIST     = 28;       // zone d'entrée : scanner + laser apparaissent
+const SCAN_DIST     = 28;       // (obsolète — remplacé par zone horizontale + altitude)
+const SCAN_DIST_H   = 18;       // rayon HORIZONTAL (xz) de déclenchement — zone réduite
+const SCAN_VERT     = 7;        // tolérance verticale sous le centre des œufs (drone doit être EN HAUT)
 const SCAN_COOLDOWN = 6;
 const SCAN_R        = 18;       // rayon du radar 3D (agrandi)
 
@@ -254,10 +256,13 @@ function tickScan(dt){
   }
   if(!oeufsMesh || !scanGroup) return;
 
-  const distToOeufs = rig.position.distanceTo(oeufCenter);
+  // Zone de déclenchement : proche horizontalement ET en hauteur (au niveau des œufs).
+  // Évite que le scanner se déclenche quand le drone est EN BAS / dans le village.
+  const dxz    = Math.hypot(rig.position.x - oeufCenter.x, rig.position.z - oeufCenter.z);
+  const inZone = dxz < SCAN_DIST_H && rig.position.y > (oeufCenter.y - SCAN_VERT);
 
   if(scanState === 'idle'){
-    if(distToOeufs < SCAN_DIST){
+    if(inZone){
       scanState   = 'scanning';
       scanElapsed = 0;
       panelShown  = false;
@@ -303,7 +308,7 @@ function tickScan(dt){
     laserMat.opacity = 0.50 + Math.sin(scanElapsed * 2.5) * 0.18;
 
     // Drone sort de la zone → éteint le scanner et annule l'affichage du panel
-    if(distToOeufs >= SCAN_DIST){
+    if(!inZone){
       scanState = 'cooldown';
       scanCooldownT = SCAN_COOLDOWN;
       scanGroup.visible = false;
