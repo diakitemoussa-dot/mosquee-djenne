@@ -418,6 +418,30 @@ loader.load(
   (err) => console.error('Erreur chargement boxcollider.glb :', err)
 );
 
+/* ---------- Chargement Personnages (plans détourés, positions Blender) ---------- */
+// Cache-buster : force le rechargement de la dernière version à chaque ré-export
+// (évite d'avoir à vider le cache / Ctrl+Shift+R après un nouvel export Blender)
+loader.load(
+  `assets/models/personnages.glb?v=${Date.now()}`,
+  (gltf) => {
+    gltf.scene.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow    = true;
+      o.receiveShadow = false;                       // plans fins : pas de réception d'ombre
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach((m) => {
+        if (!m) return;
+        m.transparent = true;                        // fond détouré = transparent
+        m.alphaTest   = 0.5;                         // découpe nette des bords
+        m.side        = THREE.DoubleSide;            // plan visible des deux côtés
+      });
+    });
+    scene.add(gltf.scene);                           // aucune transform -> positions identiques à Blender
+  },
+  null,
+  (err) => console.error('Erreur chargement personnages.glb :', err)
+);
+
 /* ---------- Redimensionnement plein écran ---------- */
 const resize = () => {
   const w = window.innerWidth, h = window.innerHeight;

@@ -7,3 +7,13 @@ Thumbs.db
 
 # Outils locaux de dev Blender (non versionnés)
 tools/blender_mcp_addon.py
+
+# Clés API / secrets (ne JAMAIS versionner)
+.env
+key remove bg.txt
+Gemini API key.txt
+
+# Artefacts de debug / captures locales
+.playwright-mcp/
+experience-personnages*.jpeg
+usdz-base64.txt
