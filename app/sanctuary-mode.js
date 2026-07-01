@@ -274,7 +274,7 @@ function _searchTomb() {
 function tickTombScan(dt) {
   _searchTomb();
   if (!tombCenter) return;
-  if (!_tombDirPlaced && _dirGLTF) { _spawnDirAt(tombCenter); _tombDirPlaced = true; }
+  // (Flèche-guide au centre du tombeau retirée : doublon avec celle de _loadDirModel)
   if (petitTombScanState === 'scanning' || petitTombScanState === 'result') return;
   if (imamScanState === 'scanning' || imamScanState === 'result') return;
 
