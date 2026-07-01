@@ -538,7 +538,10 @@
   const CUT_AT = 10; // couper la vidéo à 10s → enchaîne sur la vue mosquée
   video.addEventListener('timeupdate', () => {
     vMeta.textContent = `DRONE · ${fmt(video.currentTime)}`;
-    if (video.currentTime >= 2) {
+    // Fondu du son de la vidéo : UNIQUEMENT sur grand écran / PC.
+    // Sur smartphone (< 768 px), le son n'est PAS réduit et reste à plein volume.
+    const isMobile = window.innerWidth < MOBILE;
+    if (!isMobile && video.currentTime >= 2) {
       const vol = Math.max(0, 1 - (video.currentTime - 2) / 6);
       video.volume = vol;
     }
