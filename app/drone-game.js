@@ -351,7 +351,10 @@ const MODELS = {
 
 // État par modèle chargé : id -> { root, mixer, actions, currentClip, loaded, loading }
 const modelState = {};
-let activeModelId = 'drone';   // (localStorage appliqué dans une tâche ultérieure)
+let activeModelId = (() => {
+  try { const v = localStorage.getItem('djenne.droneModel'); if (v === 'drone' || v === 'vaisseau') return v; } catch(_){}
+  return 'drone';
+})();
 
 // Entrées normalisées -1..1 (gauche: lx=yaw, ly=altitude ; droite: rx=strafe, ry=avance)
 const input = { lx:0, ly:0, rx:0, ry:0 };
@@ -583,6 +586,22 @@ function enter(){
 
   // Affiche le message "décolle" — disparaîtra au premier envol
   takeoffHint.classList.add('is-on');
+
+  // Bouton bascule de modèle (drone <-> vaisseau)
+  const _modelBtn = document.getElementById('dgModel');
+  window.updateModelButton = function updateModelButton(){
+    if (!_modelBtn) return;
+    _modelBtn.textContent = activeModelId === 'vaisseau' ? '🛸' : '🚁';
+    _modelBtn.setAttribute('aria-label',
+      activeModelId === 'vaisseau' ? 'Passer au drone' : 'Passer au vaisseau');
+  };
+  if (_modelBtn && !_modelBtn._wired){
+    _modelBtn._wired = true;
+    _modelBtn.addEventListener('click', () => {
+      setModel(activeModelId === 'vaisseau' ? 'drone' : 'vaisseau');
+    });
+  }
+  updateModelButton();
 
   M.setGameUpdate(update);
 }
