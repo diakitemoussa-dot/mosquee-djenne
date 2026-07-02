@@ -327,12 +327,31 @@ function tickScan(dt){
 const rig = new THREE.Object3D();        // position + orientation (yaw) du drone
 let rigAdded = false;
 
-const DRONE_URL = 'assets/models/drone.glb';
 const DRACO_DECODER = 'https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/libs/draco/';
-let droneModel = null, droneMixer = null;
-const actions = {};       // nom de clip -> AnimationAction
-let currentClip = '';
-let modelLoading = false, modelLoaded = false;
+
+// Registre des modèles pilotables. yaw = offset d'orientation pour aligner le nez sur le
+// sens de vol (+Z monde). pick = fonction de sélection du clip selon les entrées.
+// spinProps = true si l'anim doit être modulée par propSpeed (hélices qui ralentissent au sol).
+const MODELS = {
+  drone: {
+    url: 'assets/models/drone.glb',
+    yaw: Math.PI / 2,          // le drone a son nez sur +X -> +90° pour viser +Z
+    idle: 'Idle_Hover',
+    spinProps: true,
+    pick: pickClipDrone,
+  },
+  vaisseau: {
+    url: `assets/models/vaisseau.glb?v=${Date.now()}`, // cache-buster (ré-exports fréquents)
+    yaw: 0,                    // nez = +Z (à confirmer plus tard ; ajustable ici)
+    idle: 'Hover',
+    spinProps: false,          // hélices déjà en boucle continue dans chaque clip
+    pick: pickClipVaisseau,
+  },
+};
+
+// État par modèle chargé : id -> { root, mixer, actions, currentClip, loaded, loading }
+const modelState = {};
+let activeModelId = 'drone';   // (localStorage appliqué dans une tâche ultérieure)
 
 // Entrées normalisées -1..1 (gauche: lx=yaw, ly=altitude ; droite: rx=strafe, ry=avance)
 const input = { lx:0, ly:0, rx:0, ry:0 };
@@ -452,41 +471,56 @@ function _initOrbitDrag(){
   canvas.addEventListener('pointercancel', _relOrbit);
 }
 
-/* ---------- Chargement du modèle ---------- */
-function loadDrone(){
-  if (modelLoading || modelLoaded) return;
-  modelLoading = true;
-  const draco = new DRACOLoader();
-  draco.setDecoderPath(DRACO_DECODER);
-  const loader = new GLTFLoader();
-  loader.setDRACOLoader(draco);
-  loader.load(DRONE_URL, (gltf)=>{
-    droneModel = gltf.scene;
-
-
-    // Normaliser la taille à ~12 unités (échelle de la maquette)
-    const box = new THREE.Box3().setFromObject(droneModel);
+/* ---------- Chargement générique d'un modèle ---------- */
+function ensureModel(id, onReady){
+  let st = modelState[id];
+  if (st && st.loaded){ onReady && onReady(st); return; }
+  if (st && st.loading) return;                 // chargement déjà en cours
+  st = modelState[id] = { root:null, mixer:null, actions:{}, currentClip:'', loaded:false, loading:true };
+  const def = MODELS[id];
+  const draco = new DRACOLoader(); draco.setDecoderPath(DRACO_DECODER);
+  const loader = new GLTFLoader(); loader.setDRACOLoader(draco);
+  loader.load(def.url, (gltf)=>{
+    const root = gltf.scene;
+    // Normaliser la taille à ~DRONE_SIZE unités (échelle de la maquette)
+    const box = new THREE.Box3().setFromObject(root);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-    droneModel.position.sub(center);
+    root.position.sub(center);
     const maxDim = Math.max(size.x, size.y, size.z) || 1;
-    droneModel.scale.setScalar(DRONE_SIZE / maxDim);
-    droneModel.rotation.y = Math.PI / 2;   // aligne le nez du drone sur le sens du vol (sinon il vole de profil)
-    droneModel.traverse((o) => {
-      if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; }
-    });
-    rig.add(droneModel);
-
-    droneMixer = new THREE.AnimationMixer(droneModel);
+    root.scale.setScalar(DRONE_SIZE / maxDim);
+    root.rotation.y = def.yaw;                  // aligne le nez sur le sens du vol
+    root.traverse((o) => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+    st.mixer = new THREE.AnimationMixer(root);
     gltf.animations.forEach((clip)=>{
-      const a = droneMixer.clipAction(clip);
+      const a = st.mixer.clipAction(clip);
       a.setLoop(THREE.LoopRepeat, Infinity);
-      actions[clip.name] = a;
+      st.actions[clip.name] = a;
     });
-    if (actions['Idle_Hover']){ actions['Idle_Hover'].play(); currentClip = 'Idle_Hover'; }
-    modelLoaded = true; modelLoading = false;
-  }, undefined, (err)=>{ console.error('Erreur chargement drone.glb :', err); modelLoading = false; });
+    if (st.actions[def.idle]){ st.actions[def.idle].play(); st.currentClip = def.idle; }
+    st.root = root; st.loaded = true; st.loading = false;
+    onReady && onReady(st);
+  }, undefined, (err)=>{
+    console.error('Erreur chargement modèle "'+id+'" :', err);
+    st.loading = false;
+    if (id !== 'drone'){          // repli automatique sur le drone
+      activeModelId = 'drone';
+      ensureModel('drone', attachActive);
+      if (typeof window.updateModelButton === 'function') window.updateModelButton();
+    }
+  });
 }
+
+// Attache le modèle actif au rig et détache les autres (le rig conserve pos/vitesse/cap)
+function attachActive(st){
+  for (const k in modelState){
+    const s = modelState[k];
+    if (s && s.root && s !== st) rig.remove(s.root);
+  }
+  if (st && st.root && st.root.parent !== rig) rig.add(st.root);
+}
+
+function activeState(){ return modelState[activeModelId]; }
 
 /* ---------- Entrée / sortie ---------- */
 function enter(){
@@ -497,7 +531,7 @@ function enter(){
 
   if (!rigAdded){ M.scene.add(rig); rigAdded = true; }
   rig.visible = true;                 // réaffiche le drone en entrant en mode jeu
-  loadDrone();
+  ensureModel(activeModelId, attachActive);
 
   // Position de départ : coordonnées Blender converties en Three.js (Y-up)
   //   Blender (X=-12.206, Y=-77.37, Z=2.6166)
@@ -577,7 +611,9 @@ function exit(){
 }
 
 /* ---------- Choix de l'animation selon le vol ---------- */
-function pickClip(){
+function pickClipVaisseau(){ return 'Hover'; }
+
+function pickClipDrone(){
   const ax = Math.abs(input.lx), ay = Math.abs(input.ly);
   const arx = Math.abs(input.rx), ary = Math.abs(input.ry);
   const max = Math.max(ax, ay, arx, ary);
@@ -593,14 +629,14 @@ function pickClip(){
   return 'Idle_Hover';
 }
 
-function setClip(name){
-  if (name === currentClip || !actions[name]) return;
-  const next = actions[name];
-  const prev = actions[currentClip];
+function setClipOn(st, name){
+  if (!st || !name || name === st.currentClip || !st.actions[name]) return;
+  const next = st.actions[name];
+  const prev = st.actions[st.currentClip];
   next.reset().play();
   if (prev) prev.crossFadeTo(next, 0.25, false);
   else next.fadeIn(0.25);
-  currentClip = name;
+  st.currentClip = name;
 }
 
 /* ---------- Collisions (raycasting) ---------- */
@@ -714,13 +750,19 @@ function triggerHaptic(){
 function update(dt){
   dt = Math.min(dt, 0.05);   // borne pour éviter les sauts
   if (dt <= 0) return;       // frame nulle : évite une vitesse NaN (division par dt plus bas)
-  if (droneMixer){
-    const target = landed ? 0 : 1;                       // hélices à l'arrêt quand le drone est posé
-    propSpeed += (target - propSpeed) * Math.min(1, 6 * dt);
-    if (target === 0 && propSpeed < 0.03) propSpeed = 0;  // arrêt complet
-    droneMixer.timeScale = propSpeed;
-    droneMixer.update(dt);
-    setClip(pickClip());
+  const _st = activeState();
+  if (_st && _st.mixer){
+    const _def = MODELS[activeModelId];
+    if (_def.spinProps){
+      const target = landed ? 0 : 1;                       // hélices à l'arrêt quand posé
+      propSpeed += (target - propSpeed) * Math.min(1, 6 * dt);
+      if (target === 0 && propSpeed < 0.03) propSpeed = 0;
+      _st.mixer.timeScale = propSpeed;
+    } else {
+      _st.mixer.timeScale = 1;                             // vaisseau : vitesse d'anim constante
+    }
+    _st.mixer.update(dt);
+    setClipOn(_st, _def.pick());
   }
 
   // Cibles depuis les entrées
