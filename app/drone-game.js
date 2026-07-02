@@ -520,6 +520,23 @@ function attachActive(st){
   if (st && st.root && st.root.parent !== rig) rig.add(st.root);
 }
 
+// Bascule le modèle actif (charge à la demande), conserve pos/vitesse/cap du rig.
+function setModel(id){
+  if (!MODELS[id] || id === activeModelId) return;
+  // Stoppe proprement les actions du modèle qu'on quitte (évite qu'un mixer inactif garde un état)
+  const prev = modelState[activeModelId];
+  if (prev && prev.mixer) prev.mixer.stopAllAction();
+  activeModelId = id;
+  try { localStorage.setItem('djenne.droneModel', id); } catch(_){}
+  ensureModel(id, (st) => {
+    attachActive(st);
+    // Repart de l'idle du nouveau modèle
+    const def = MODELS[id];
+    if (st.actions[def.idle]){ st.actions[def.idle].reset().play(); st.currentClip = def.idle; }
+  });
+  if (typeof window.updateModelButton === 'function') window.updateModelButton();
+}
+
 function activeState(){ return modelState[activeModelId]; }
 
 /* ---------- Entrée / sortie ---------- */
@@ -611,7 +628,13 @@ function exit(){
 }
 
 /* ---------- Choix de l'animation selon le vol ---------- */
-function pickClipVaisseau(){ return 'Hover'; }
+function pickClipVaisseau(){
+  const alx = Math.abs(input.lx);   // lx = yaw (virage)
+  const ary = Math.abs(input.ry);   // ry = avance (ry<0 = haut = avancer)
+  if (alx > 0.15) return input.lx < 0 ? 'TurnLeft' : 'TurnRight';   // sens à confirmer en test final
+  if (ary > 0.15) return input.ry < 0 ? 'Forward'  : 'Reverse';
+  return 'Hover';
+}
 
 function pickClipDrone(){
   const ax = Math.abs(input.lx), ay = Math.abs(input.ly);
@@ -1213,4 +1236,4 @@ function sndStop(){
   }, 900);
 }
 
-window.DroneGame = { enter, exit };
+window.DroneGame = { enter, exit, setModel, getModel: () => activeModelId };
