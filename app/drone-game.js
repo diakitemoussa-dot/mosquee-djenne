@@ -342,7 +342,7 @@ const MODELS = {
   },
   vaisseau: {
     url: `assets/models/vaisseau.glb?v=${Date.now()}`, // cache-buster (ré-exports fréquents)
-    yaw: 0,                    // nez = +Z (à confirmer plus tard ; ajustable ici)
+    yaw: -Math.PI / 2,         // nez (Ship_Cockpit) sur -X -> -90° pour viser -Z (comme le drone)
     idle: 'Hover',
     spinProps: false,          // hélices déjà en boucle continue dans chaque clip
     pick: pickClipVaisseau,
