@@ -342,15 +342,36 @@ const MODELS = {
   },
   vaisseau: {
     url: `assets/models/vaisseau.glb?v=${Date.now()}`, // cache-buster (ré-exports fréquents)
-    yaw: -Math.PI / 2,         // nez (Ship_Cockpit) sur -X -> -90° pour viser -Z (comme le drone)
+    yaw: -Math.PI / 2,         // nez du modèle sur -X local -> -90° pour aligner le nez sur l'avant du rig (-Z)
     idle: 'Hover',
     spinProps: false,          // hélices déjà en boucle continue dans chaque clip
+    scale: 3,                  // vaisseau 3× plus grand que le drone
     pick: pickClipVaisseau,
   },
 };
 
-// État par modèle chargé : id -> { root, mixer, actions, currentClip, loaded, loading }
+// État par modèle chargé : id -> { root, mixer, actions, currentClip, loaded, loading, footprint }
 const modelState = {};
+
+/* ---------- Ombre de contact (blob) : disque sombre plaqué au sol sous l'appareil ---------- */
+let blobShadow = null;
+function makeBlobShadow(){
+  const cvs = document.createElement('canvas'); cvs.width = cvs.height = 128;
+  const g = cvs.getContext('2d');
+  const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grad.addColorStop(0.0, 'rgba(0,0,0,0.55)');
+  grad.addColorStop(0.55, 'rgba(0,0,0,0.30)');
+  grad.addColorStop(1.0, 'rgba(0,0,0,0)');
+  g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+  const tex  = new THREE.CanvasTexture(cvs);
+  const mat  = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, fog: false });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);
+  mesh.rotation.x = -Math.PI / 2;   // à plat sur le sol
+  mesh.renderOrder = 2;
+  mesh.name = 'blobShadow';
+  mesh.raycast = () => {};          // JAMAIS un obstacle : invisible au raycasting (sol, collisions, scan)
+  return mesh;
+}
 let activeModelId = (() => {
   try { const v = localStorage.getItem('djenne.droneModel'); if (v === 'drone' || v === 'vaisseau') return v; } catch(_){}
   return 'drone';
@@ -488,11 +509,17 @@ function ensureModel(id, onReady){
     // Normaliser la taille à ~DRONE_SIZE unités (échelle de la maquette)
     const box = new THREE.Box3().setFromObject(root);
     const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-    root.position.sub(center);
     const maxDim = Math.max(size.x, size.y, size.z) || 1;
-    root.scale.setScalar(DRONE_SIZE / maxDim);
+    root.scale.setScalar(DRONE_SIZE / maxDim * (def.scale || 1));
     root.rotation.y = def.yaw;                  // aligne le nez sur le sens du vol
+    // Recentrer APRÈS échelle + rotation : le centre géométrique tombe pile sur l'origine
+    // du rig (sinon un modèle non centré dérive quand on l'agrandit, ex. vaisseau ×3)
+    root.updateMatrixWorld(true);
+    const fbox   = new THREE.Box3().setFromObject(root);
+    const center = fbox.getCenter(new THREE.Vector3());
+    root.position.sub(center);
+    const fsize  = fbox.getSize(new THREE.Vector3());
+    st.footprint = Math.max(fsize.x, fsize.z) || DRONE_SIZE;   // largeur au sol -> taille de l'ombre
     root.traverse((o) => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
     st.mixer = new THREE.AnimationMixer(root);
     gltf.animations.forEach((clip)=>{
@@ -581,6 +608,8 @@ function enter(){
   _initOrbitDrag();
 
   if (!scanGroup) initScan();
+  if (!blobShadow){ blobShadow = makeBlobShadow(); M.scene.add(blobShadow); }
+  blobShadow.visible = true;
   if (typeof window.stopModelWind === 'function') window.stopModelWind();
   _dronePartTimer = setTimeout(_playDronePart, 30000);
 
@@ -623,6 +652,7 @@ function exit(){
   document.getElementById('dgScanHud')?.classList.remove('visible');
   document.getElementById('dgScanResult')?.classList.remove('visible');
   rig.visible = false;                // masque le drone hors du mode jeu (vue d'ensemble)
+  if (blobShadow) blobShadow.visible = false;
   hud.classList.remove('is-on');
   hud.setAttribute('aria-hidden','true');
   rotateEl.classList.remove('is-on');
@@ -648,10 +678,11 @@ function exit(){
 
 /* ---------- Choix de l'animation selon le vol ---------- */
 function pickClipVaisseau(){
-  const alx = Math.abs(input.lx);   // lx = yaw (virage)
   const ary = Math.abs(input.ry);   // ry = avance (ry<0 = haut = avancer)
-  if (alx > 0.15) return input.lx < 0 ? 'TurnLeft' : 'TurnRight';   // sens à confirmer en test final
-  if (ary > 0.15) return input.ry < 0 ? 'Forward'  : 'Reverse';
+  // Virage : horizontale du stick (droit rx prioritaire, sinon gauche lx). Droite = TurnRight, gauche = TurnLeft.
+  const turn = Math.abs(input.rx) > Math.abs(input.lx) ? input.rx : input.lx;
+  if (Math.abs(turn) > 0.15) return turn > 0 ? 'TurnRight' : 'TurnLeft';
+  if (ary > 0.15) return input.ry < 0 ? 'Reverse'  : 'Forward';    // clips inversés côté modèle : haut(avance)=clip Reverse, bas(recule)=clip Forward
   return 'Hover';
 }
 
@@ -853,6 +884,23 @@ function update(dt){
   } else {
     const floor = M.viewTarget.y - 50;      // secours si rien dessous (hors maquette)
     if (rig.position.y < floor){ rig.position.y = floor; if (vel.up < 0) vel.up = 0; }
+  }
+
+  // Ombre de contact : toujours visible sous l'appareil (drone ET vaisseau), même posé au sol
+  if (blobShadow){
+    if (minY > -Infinity){
+      const surfaceY = minY - CLEARANCE;                 // groundUnder() = surface + CLEARANCE
+      const alt      = Math.max(0, rig.position.y - surfaceY);
+      const _bs      = activeState();
+      const foot     = (_bs && _bs.footprint) ? _bs.footprint : DRONE_SIZE;
+      const s        = foot * 1.5 * (1 + Math.min(alt / 25, 1.3));    // grandit en montant
+      blobShadow.visible = true;
+      blobShadow.position.set(rig.position.x, surfaceY + 0.05, rig.position.z);
+      blobShadow.scale.set(s, s, 1);
+      blobShadow.material.opacity = Math.max(0.1, 0.5 * (1 - Math.min(alt / 45, 1)));  // s'estompe en hauteur
+    } else {
+      blobShadow.visible = false;
+    }
   }
 
   // "Posé" = au sol, sans commande et quasi immobile -> on coupe les hélices
@@ -1079,8 +1127,32 @@ let _sndBandHi = null;   // BiquadFilter bandpass haute
 let _sndBandLo = null;   // BiquadFilter bandpass basse
 let _sndAirShf = null;   // BiquadFilter high-shelf "air extérieur"
 let _sndNoisGn = null;   // GainNode couche bruit
+let _sndSub    = null;   // OscillatorNode sub-bass (sine) — "géant" pour le vaisseau
+let _sndSubGn  = null;   // GainNode du sub-bass (0 pour le drone)
 let _sndOn     = false;
 let _sndTimer  = 0;
+
+/* Profil sonore selon le modèle actif. Le drone garde EXACTEMENT ses valeurs d'origine ;
+   le vaisseau reçoit un profil "géant" : fréquence très grave, timbre riche (sawtooth),
+   sub-bass ressentie, réverb immense. Lu dynamiquement -> le swap glisse en live. */
+function sndProfile(){
+  if (activeModelId === 'vaisseau'){
+    return {
+      type: 'sawtooth', baseHz: 30, detunes: [0, 3, -2, 5], pitchSpread: 0.14,
+      subHz: 24, subGain: 0.30,
+      wetBase: 0.55, wetSpeed: 0.10, master: 0.85, masterSpeed: 0.10,
+      noiseBase: 0.05, noiseYaw: 0.03, bandHi: 700, bandHiSpeed: 700,
+      bandLo: 180, bandLoSpeed: 120, idleHz: 24, idleMaster: 0.30, idleBandHi: 380,
+    };
+  }
+  return {  // drone — valeurs d'origine, inchangées
+    type: 'triangle', baseHz: 90, detunes: [0, 5, -4, 9], pitchSpread: 0.28,
+    subHz: 0, subGain: 0,
+    wetBase: 0.35, wetSpeed: 0.10, master: 0.62, masterSpeed: 0.14,
+    noiseBase: 0.08, noiseYaw: 0.04, bandHi: 1400, bandHiSpeed: 1800,
+    bandLo: 300, bandLoSpeed: 150, idleHz: 72, idleMaster: 0.18, idleBandHi: 600,
+  };
+}
 
 // Bruit blanc 15 s avec fenêtrage Hann aux bords (boucle sans clic)
 function _makeSeamlessNoise(ctx){
@@ -1155,27 +1227,30 @@ function sndStart(){
   srcBus.connect(_sndDry);
   srcBus.connect(conv);
 
-  // 4 moteurs triangle — panés L/R pour stéréo spread naturel
-  //   moteur 0 (-0.5L), 1 (+0.5R), 2 (-0.3L), 3 (+0.3R)
-  const baseHz  = 90;
-  const configs = [
-    { det: 0,  pan: -0.5 },
-    { det: 5,  pan:  0.5 },
-    { det: -4, pan: -0.3 },
-    { det: 9,  pan:  0.3 },
-  ];
-  configs.forEach(cfg => {
+  // 4 moteurs — panés L/R pour stéréo spread naturel. Type/fréquence issus du profil du modèle.
+  const prof = sndProfile();
+  const pans = [-0.5, 0.5, -0.3, 0.3];
+  pans.forEach((pan, i) => {
     const osc = _sndCtx.createOscillator();
-    osc.type = 'triangle';
-    osc.frequency.value = baseHz + cfg.det;
+    osc.type = prof.type;
+    osc.frequency.value = prof.baseHz + prof.detunes[i];
     const panner = _sndCtx.createStereoPanner();
-    panner.pan.value = cfg.pan;
+    panner.pan.value = pan;
     const g = _sndCtx.createGain();
     g.gain.value = 0.08;
     osc.connect(g); g.connect(panner); panner.connect(srcBus);
     osc.start();
     _sndMotors.push(osc);
   });
+
+  // Sub-bass (sine) : couche grave "ressentie" — muet pour le drone, puissant pour le vaisseau
+  _sndSub = _sndCtx.createOscillator();
+  _sndSub.type = 'sine';
+  _sndSub.frequency.value = prof.subHz || 24;
+  _sndSubGn = _sndCtx.createGain();
+  _sndSubGn.gain.value = prof.subGain;
+  _sndSub.connect(_sndSubGn); _sndSubGn.connect(srcBus);
+  _sndSub.start();
 
   // Bruit seamless → filtres bandpass Q très faibles (ouverture maximale)
   const noiseSrc = _sndCtx.createBufferSource();
@@ -1214,34 +1289,40 @@ function sndUpdate(speedMs, yawInput, isLanded, dt){
 
   const t  = _sndCtx.currentTime;
   const TC = 0.35;
+  const p  = sndProfile();
+
+  // Timbre + sub-bass : suivent le modèle actif (glissent en douceur après un swap à chaud)
+  _sndMotors.forEach(o => { if (o.type !== p.type) o.type = p.type; });
+  if (_sndSub){
+    _sndSub.frequency.setTargetAtTime(p.subHz || 0.0001, t, 0.6);
+    _sndSubGn.gain.setTargetAtTime(isLanded ? p.subGain * 0.7 : p.subGain, t, 0.6);
+  }
 
   if (isLanded){
-    _sndMaster.gain.setTargetAtTime(0.18, t, 0.5);
-    _sndMotors.forEach(o => o.frequency.setTargetAtTime(72, t, 0.7));
-    _sndBandHi.frequency.setTargetAtTime(600, t, 0.7);
+    _sndMaster.gain.setTargetAtTime(p.idleMaster, t, 0.5);
+    _sndMotors.forEach((o, i) => o.frequency.setTargetAtTime(p.idleHz + p.detunes[i], t, 0.7));
+    _sndBandHi.frequency.setTargetAtTime(p.idleBandHi, t, 0.7);
     return;
   }
-  if (_sndMaster.gain.value < 0.15) _sndMaster.gain.setTargetAtTime(0.72, t, 0.5);
+  if (_sndMaster.gain.value < 0.15) _sndMaster.gain.setTargetAtTime(p.master, t, 0.5);
 
   const sN = Math.min(Math.abs(speedMs) / SPEED, 1);
   const yN = Math.min(Math.abs(yawInput), 1);
-  const baseHz  = 90;
-  const detunes = [0, 5, -4, 9];
-  const pitchMult = 1 + sN * 0.28 + yN * 0.06;
+  const pitchMult = 1 + sN * p.pitchSpread + yN * 0.06;
 
   _sndMotors.forEach((o, i) => {
-    o.frequency.setTargetAtTime((baseHz + detunes[i]) * pitchMult, t, TC);
+    o.frequency.setTargetAtTime((p.baseHz + p.detunes[i]) * pitchMult, t, TC);
   });
 
-  _sndBandHi.frequency.setTargetAtTime(1400 + sN * 1800, t, TC);
-  _sndBandLo.frequency.setTargetAtTime(300  + sN * 150,  t, TC);
+  _sndBandHi.frequency.setTargetAtTime(p.bandHi + sN * p.bandHiSpeed, t, TC);
+  _sndBandLo.frequency.setTargetAtTime(p.bandLo + sN * p.bandLoSpeed, t, TC);
 
   // Plus de vitesse → mix plus mouillé (son se disperse dans l'espace)
-  _sndWet.gain.setTargetAtTime(0.35 + sN * 0.10, t, TC);
-  _sndDry.gain.setTargetAtTime(0.65 - sN * 0.10, t, TC);
+  _sndWet.gain.setTargetAtTime(p.wetBase + sN * p.wetSpeed, t, TC);
+  _sndDry.gain.setTargetAtTime((1 - p.wetBase) - sN * p.wetSpeed, t, TC);
 
-  _sndMaster.gain.setTargetAtTime(0.62 + sN * 0.14 + yN * 0.05, t, TC);
-  _sndNoisGn.gain.setTargetAtTime(0.08 + yN * 0.04, t, TC);
+  _sndMaster.gain.setTargetAtTime(p.master + sN * p.masterSpeed + yN * 0.05, t, TC);
+  _sndNoisGn.gain.setTargetAtTime(p.noiseBase + yN * p.noiseYaw, t, TC);
 }
 
 function sndStop(){
@@ -1250,8 +1331,9 @@ function sndStop(){
   setTimeout(() => {
     try { _sndMotors.forEach(o => o.stop()); } catch(_){}
     try { _sndNoise.stop(); } catch(_){}
+    try { _sndSub && _sndSub.stop(); } catch(_){}
     try { _sndCtx.close(); } catch(_){}
-    _sndCtx = null; _sndMotors = []; _sndNoise = null; _sndOn = false;
+    _sndCtx = null; _sndMotors = []; _sndNoise = null; _sndSub = null; _sndSubGn = null; _sndOn = false;
   }, 900);
 }
 
