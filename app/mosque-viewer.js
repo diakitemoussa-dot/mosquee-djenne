@@ -121,8 +121,8 @@ function renderSelectiveBloom(){
   finalComposer.render();
 }
 
-/* ---------- Lumières (extérieur, ambiance chaude légèrement rougeâtre) ---------- */
-const sun = new THREE.DirectionalLight(0xffcdaa, 1.7);  // soleil chaud (ambré/rosé, pas trop rouge)
+/* ---------- Lumières (extérieur, fin de journée douce) ---------- */
+const sun = new THREE.DirectionalLight(0xfff3da, 1.7);
 sun.position.set(180, 280, 120);
 sun.castShadow = true;
 sun.shadow.mapSize.set(4096, 4096);
@@ -135,9 +135,9 @@ sun.shadow.camera.bottom = -320;
 sun.shadow.bias          = -0.003;
 sun.shadow.normalBias    =  0.15;
 scene.add(sun);
-const hemi = new THREE.HemisphereLight(0xf2d3c2, 0xd8bd94, 1.15);  // ciel réchauffé / sol ocre chaud
+const hemi = new THREE.HemisphereLight(0xcfe2f5, 0xd8c49a, 1.15);  // ciel bleu / sol ocre clair
 scene.add(hemi);
-const amb = new THREE.AmbientLight(0xffd8c2, 0.35);  // ambiance chaude, ombres préservées
+const amb = new THREE.AmbientLight(0xffffff, 0.35);  // réduit pour que les ombres restent visibles
 scene.add(amb);
 
 /* ---------- Collines d'horizon (illusion de relief autour du village) ---------- */
