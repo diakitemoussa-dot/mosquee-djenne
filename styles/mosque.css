@@ -94,6 +94,12 @@
   letter-spacing: .22em;
   color: rgba(255,255,255,.7);
 }
+/* Texte d'aide : "molette pour zoomer" (souris) vs "pincez pour zoomer" (tactile) */
+.mq-sub-mobile{ display: none; }
+@media (pointer: coarse){
+  .mq-sub-desktop{ display: none; }
+  .mq-sub-mobile{ display: inline; }
+}
 
 /* === Animation "Think" lettre par lettre sur le titre fort === */
 .mosque-title strong .mq-tchar{

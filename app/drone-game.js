@@ -357,10 +357,7 @@ function makeBlobShadow(){
   mesh.raycast = () => {};          // JAMAIS un obstacle : invisible au raycasting (sol, collisions, scan)
   return mesh;
 }
-let activeModelId = (() => {
-  try { const v = localStorage.getItem('djenne.droneModel'); if (v === 'drone' || v === 'vaisseau') return v; } catch(_){}
-  return 'drone';
-})();
+let activeModelId = 'drone'; // le drone est toujours le modèle affiché à l'entrée
 
 // Entrées normalisées -1..1 (gauche: lx=yaw, ly=altitude ; droite: rx=strafe, ry=avance)
 const input = { lx:0, ly:0, rx:0, ry:0 };
@@ -542,7 +539,6 @@ function setModel(id){
   const prev = modelState[activeModelId];
   if (prev && prev.mixer) prev.mixer.stopAllAction();
   activeModelId = id;
-  try { localStorage.setItem('djenne.droneModel', id); } catch(_){}
   ensureModel(id, (st) => {
     attachActive(st);
     // Repart de l'idle du nouveau modèle
