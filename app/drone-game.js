@@ -19,27 +19,12 @@ _scannerSound.preload = 'auto';
 _scannerSound.volume  = 0.85;
 const _playScanner = () => { _scannerSound.currentTime = 0; _scannerSound.play().catch(() => {}); };
 
-/* Son marche — joué quand le joystick est actif */
-const _walkSoundGame = new Audio('assets/audio/walking_sound_for_inside.mp3');
-_walkSoundGame.preload = 'auto';
-_walkSoundGame.loop    = false;
-_walkSoundGame.volume  = 0.7;
-
 /* Déverrouillage iOS : play+pause synchrone sur premier geste */
 document.addEventListener('audioUnlock', () => {
-  [_scannerSound, _walkSoundGame].forEach(a => {
+  [_scannerSound].forEach(a => {
     a.play().catch(() => {}); a.pause(); a.currentTime = 0;
   });
 }, { once: true });
-_walkSoundGame.addEventListener('timeupdate', () => {
-  if (_walkSoundGame.currentTime >= 29) {
-    _walkSoundGame.currentTime = 0;
-    _walkSoundGame.play().catch(() => {});
-  }
-});
-let _walkGamePlaying = false;
-const _startWalkGame = () => { if (!_walkGamePlaying) { _walkGamePlaying = true; _walkSoundGame.play().catch(() => {}); } };
-const _stopWalkGame  = () => { if (_walkGamePlaying)  { _walkGamePlaying = false; _walkSoundGame.pause(); _walkSoundGame.currentTime = 0; } };
 
 /* Son drone part — joué 30s après le début du jeu */
 const _dronePart = new Audio('assets/audio/sound_for_drone_part.mp3');
@@ -640,7 +625,6 @@ function exit(){
   active = false;
   if (_dronePartTimer) { clearTimeout(_dronePartTimer); _dronePartTimer = null; }
   _dronePart.pause(); _dronePart.currentTime = 0;
-  _stopWalkGame();
   if (recorder){ try { recorder.stop(); } catch(_){} }
   sndStop();
   orbitMode = false; orbitReturning = false; _orbitDragId = null;
@@ -1018,7 +1002,6 @@ makeStick(document.getElementById('dgStickL'), (x,y)=>{
 const STICK_R_SENS = 0.45; // réduit la sensibilité du joystick droit
 makeStick(document.getElementById('dgStickR'), (x,y)=>{
   input.rx=x*STICK_R_SENS; input.ry=y*STICK_R_SENS;
-  if (x !== 0 || y !== 0) _startWalkGame(); else _stopWalkGame();
 });
 
 /* ---------- Outil Photo ---------- */
