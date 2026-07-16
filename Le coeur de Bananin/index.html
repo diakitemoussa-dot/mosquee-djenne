@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GUYO – Le cœur du pays dogon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Special+Elite&family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="loading-screen">
+    <svg width="0" height="0" style="position:absolute">
+      <defs>
+        <filter id="paper-grain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="noise" />
+          <feColorMatrix in="noise" type="matrix"
+            values="0 0 0 0 0
+                    0 0 0 0 0
+                    0 0 0 0 0
+                    0 0 0 0.03 0" />
+        </filter>
+
+        <filter id="rough-edge" x="-20%" y="-50%" width="140%" height="200%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.02 0.15" numOctaves="2" seed="4" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+
+        <pattern id="hatch-pattern" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="#8b1e2f" stroke-width="2" />
+        </pattern>
+        <pattern id="hatch-pattern-2" width="8" height="8" patternTransform="rotate(-45)" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="#8b1e2f" stroke-width="1.5" opacity="0.7" />
+        </pattern>
+      </defs>
+    </svg>
+
+    <div class="paper-grain-overlay"></div>
+
+    <div class="loading-content">
+      <h1 class="title">GUYO – Le cœur du pays dogon</h1>
+
+      <div class="progress-wrap">
+        <svg class="progress-bar-svg" viewBox="0 0 400 60" preserveAspectRatio="none">
+          <rect class="progress-track" x="4" y="4" width="392" height="52" rx="26" />
+          <clipPath id="progress-clip">
+            <rect id="progress-fill-rect" x="4" y="4" width="0" height="52" rx="26" />
+          </clipPath>
+          <g clip-path="url(#progress-clip)">
+            <rect x="4" y="4" width="392" height="52" fill="url(#fill-gradient)" />
+            <rect x="4" y="4" width="392" height="52" fill="url(#hatch-pattern)" />
+            <rect x="4" y="4" width="392" height="52" fill="url(#hatch-pattern-2)" />
+          </g>
+          <defs>
+            <linearGradient id="fill-gradient" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#a12c3f" />
+              <stop offset="100%" stop-color="#c9536b" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <p class="loading-label">LOADING<span class="dots">...</span></p>
+    </div>
+  </div>
+
+  <button id="audio-toggle" class="audio-toggle" type="button" aria-label="Couper le son">
+    <svg class="audio-icon audio-icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 9v6h4l5 5V4L8 9H4z" fill="currentColor" stroke="none" />
+      <path d="M16.5 8.5a5 5 0 0 1 0 7" />
+      <path d="M19 6a9 9 0 0 1 0 12" />
+    </svg>
+    <svg class="audio-icon audio-icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 9v6h4l5 5V4L8 9H4z" fill="currentColor" stroke="none" />
+      <line x1="16" y1="9" x2="21" y2="14" />
+      <line x1="21" y1="9" x2="16" y2="14" />
+    </svg>
+  </button>
+
+  <div id="experience" hidden>
+    <svg id="sky-screen" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <filter id="watercolor-bleed" x="-50%" y="-50%" width="200%" height="200%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="3" seed="9" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="80" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <mask id="reveal-mask">
+          <circle id="reveal-circle" cx="50%" cy="50%" r="0" fill="white" filter="url(#watercolor-bleed)" />
+        </mask>
+      </defs>
+      <image id="sky-image" href="asset/image/sky.png" width="100%" height="100%"
+        preserveAspectRatio="xMidYMid slice" mask="url(#reveal-mask)" />
+    </svg>
+
+    <div id="scroll-hint">
+      <p class="scroll-hint-label">Scroll</p>
+      <svg class="scroll-hint-icon" viewBox="0 0 100 160" fill="none">
+        <g stroke="#2f3b45" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="35,16 50,4 65,16" />
+          <path id="hand-icon" d="M38,64 c-4,-4 -10,-3.5 -9.5,3 c0.3,3.8 3.8,6.5 7.5,10.3 l4,4.2 v9 a5,5 0 0 0 5,5 h11 a11,11 0 0 0 11,-11 v-13.5 l-15,-9.5 z" />
+          <polyline points="35,144 50,156 65,144" />
+        </g>
+      </svg>
+    </div>
+
+  </div>
+
+  <div id="scene3d" hidden></div>
+  <div id="scene3d-part2" hidden></div>
+  <div id="scroll-space"></div>
+
+  <p id="story-text-1" class="story-text">bienvenue dans l'univers dogon<br>dans la quelle chaque famille<br>pose un grenier appelé Guyo</p>
+  <p id="story-text-2" class="story-text story-text-right">durant la saison des pluies<br>les hommes cultivent la terre<br>pour remplir le grenier familial</p>
+  <p id="story-text-3" class="story-text">les femmes puisent dans le grenier<br>et pilent les récoltes<br>pour nourrir toute la famille</p>
+  <p id="story-title-1" class="story-title">Récoltes</p>
+  <p id="story-text-4" class="story-text story-text-right story-text-mid no-halo">le mil<br>céréale dorée du Sahel<br>séché puis conservé dans le grenier</p>
+  <p id="story-text-5" class="story-text story-text-right story-text-mid no-halo">le fonio<br>la plus petite céréale du Sahel<br>récoltée à la main puis conservée dans le grenier</p>
+
+  <div id="story-hud-1" class="story-hud">
+    <p class="hud-label">GUYO</p>
+    <p class="hud-sub">grenier ancestral dogon<span class="hud-cursor">_</span></p>
+  </div>
+  <div id="story-hud-2" class="story-hud">
+    <p class="hud-label hud-label-sm">LA PORTE</p>
+    <p class="hud-sub">chaque rangée de figures représente les ancêtres de la famille<br>les motifs protègent le grain contre les esprits et les voleurs<br>un art transmis de génération en génération<span class="hud-cursor">_</span></p>
+  </div>
+  <div id="story-hud-3" class="story-hud story-hud-up">
+    <p class="hud-label hud-label-sm">LES FONDATIONS</p>
+    <p class="hud-sub">le grenier repose sur des pierres pour l'isoler de l'humidité<br>cette surélévation protège les récoltes des rongeurs et des termites<br>une architecture pensée pour durer des générations<span class="hud-cursor">_</span></p>
+  </div>
+  <div id="story-hud-4" class="story-hud">
+    <p class="hud-label hud-label-sm">LE TOIT</p>
+    <p class="hud-sub">une toiture conique en paille tressée<br>elle évacue la pluie et laisse circuler l'air pour sécher le grain<br>renouvelée régulièrement par les hommes du village<span class="hud-cursor">_</span></p>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.164.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.164.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script src="main.js"></script>
+  <script type="module" src="scene3d.js"></script>
+  <script type="module" src="scene3d-part2.js"></script>
+</body>
+</html>
