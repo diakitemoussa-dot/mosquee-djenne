@@ -465,7 +465,46 @@ function createDustParticles(scene) {
     }
   `;
 
-  return { geometry, config };
+  // Fragment Shader
+  const fragmentShader = `
+    uniform vec3 dustColor;
+    uniform float opacity;
+
+    void main() {
+      // Point circulaire avec falloff
+      vec2 pc = gl_PointCoord - vec2(0.5);
+      float dist = length(pc);
+      float alpha = (1.0 - dist * 2.0) * opacity;
+      alpha = max(0.0, alpha);
+
+      gl_FragColor = vec4(dustColor, alpha);
+    }
+  `;
+
+  // Créer le matériau avec les shaders
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      speed: { value: config.speed },
+      gravity: { value: config.gravity },
+      oscillationSpeed: { value: config.oscillationSpeed },
+      oscillationAmount: { value: config.oscillationAmount },
+      radius: { value: config.radius },
+      dustColor: { value: config.color },
+      opacity: { value: config.opacity }
+    },
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+
+  // Créer le mesh Points
+  const dustParticles = new THREE.Points(geometry, material);
+  dustParticles.userData.dustMaterial = material;
+
+  return dustParticles;
 }
 
 window.startScene3DPart2 = function startScene3DPart2() {
