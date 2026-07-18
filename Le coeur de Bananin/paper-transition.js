@@ -7,11 +7,19 @@
 
   const overlay = document.getElementById('paper-unfold-overlay');
 
+  // IDs des timeouts en cours, pour pouvoir les annuler si la transition est
+  // redéclenchée avant la fin de la précédente (ex: double-clic rapide).
+  let pendingTimeouts = [];
+
   window.playPaperUnfoldTransition = function playPaperUnfoldTransition(onFullyCovered) {
     if (!overlay) {
       if (typeof onFullyCovered === 'function') onFullyCovered();
       return;
     }
+
+    // Annuler toute transition en cours avant d'en démarrer une nouvelle.
+    pendingTimeouts.forEach(clearTimeout);
+    pendingTimeouts = [];
 
     // Réinitialiser l'état avant de rejouer (au cas où la transition a déjà tourné).
     overlay.hidden = false;
@@ -25,18 +33,18 @@
 
     overlay.classList.add('unfolding');
 
-    setTimeout(() => {
+    pendingTimeouts.push(setTimeout(() => {
       if (typeof onFullyCovered === 'function') onFullyCovered();
-    }, FULL_COVER_MS);
+    }, FULL_COVER_MS));
 
-    setTimeout(() => {
+    pendingTimeouts.push(setTimeout(() => {
       overlay.classList.add('fading-out');
-    }, FULL_COVER_MS + PAUSE_MS);
+    }, FULL_COVER_MS + PAUSE_MS));
 
-    setTimeout(() => {
+    pendingTimeouts.push(setTimeout(() => {
       overlay.hidden = true;
       overlay.classList.remove('unfolding');
       overlay.classList.remove('fading-out');
-    }, FULL_COVER_MS + PAUSE_MS + FADE_MS);
+    }, FULL_COVER_MS + PAUSE_MS + FADE_MS));
   };
 })();
