@@ -435,6 +435,36 @@ function createDustParticles(scene) {
 
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
+  // Vertex Shader
+  const vertexShader = `
+    uniform float time;
+    uniform float speed;
+    uniform float gravity;
+    uniform float oscillationSpeed;
+    uniform float oscillationAmount;
+    uniform float radius;
+
+    void main() {
+      vec3 pos = position;
+
+      // Gravité : descente lente et cyclique
+      pos.y -= time * speed * gravity;
+
+      // Régénération : quand y trop bas, remonter au sommet
+      if (pos.y < -radius * 1.5) {
+        pos.y = radius;
+      }
+
+      // Oscillation horizontale (flottement naturel)
+      pos.x += sin(time * oscillationSpeed + position.z * 0.1) * oscillationAmount;
+      pos.z += cos(time * oscillationSpeed * 0.7 + position.x * 0.1) * oscillationAmount;
+
+      // Projection caméra
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      gl_PointSize = 2.0;
+    }
+  `;
+
   return { geometry, config };
 }
 
