@@ -78,7 +78,7 @@
     </svg>
   </button>
 
-  <div id="experience" hidden>
+  <div id="scene3d" hidden>
     <svg id="sky-screen" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
       <defs>
         <filter id="watercolor-bleed" x="-50%" y="-50%" width="200%" height="200%">
@@ -103,10 +103,7 @@
         </g>
       </svg>
     </div>
-
   </div>
-
-  <div id="scene3d" hidden></div>
   <div id="scene3d-part2" hidden></div>
   <div id="scroll-space"></div>
 
@@ -134,6 +131,15 @@
     <p class="hud-sub">une toiture conique en paille tressée<br>elle évacue la pluie et laisse circuler l'air pour sécher le grain<br>renouvelée régulièrement par les hommes du village<span class="hud-cursor">_</span></p>
   </div>
 
+  <div id="paper-unfold-overlay" hidden>
+    <div class="paper-strip paper-strip--left"></div>
+    <div class="paper-strip paper-strip--left"></div>
+    <div class="paper-strip paper-strip--left"></div>
+    <div class="paper-strip paper-strip--right"></div>
+    <div class="paper-strip paper-strip--right"></div>
+    <div class="paper-strip paper-strip--right"></div>
+  </div>
+
   <script type="importmap">
     {
       "imports": {
@@ -143,6 +149,7 @@
     }
   </script>
   <script src="main.js"></script>
+  <script src="paper-transition.js"></script>
   <script type="module" src="scene3d.js"></script>
   <script type="module" src="scene3d-part2.js"></script>
 </body>
