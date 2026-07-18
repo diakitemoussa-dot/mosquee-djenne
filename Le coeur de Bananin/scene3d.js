@@ -21,6 +21,7 @@ let actions = [];
 let timelineDuration = 0;
 let started = false;
 let loadedGltf = null;
+let initPending = false;
 
 const basePosition = new THREE.Vector3();
 const baseQuaternion = new THREE.Quaternion();
@@ -226,6 +227,7 @@ function findCamera(gltf) {
 }
 
 function onResize() {
+  if (!renderer) return;
   const width = window.innerWidth;
   const height = window.innerHeight;
   renderer.setSize(width, height);
@@ -441,7 +443,12 @@ function init(gltf) {
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  container.appendChild(renderer.domElement);
+  const firstChild = container.firstChild;
+  if (firstChild) {
+    container.insertBefore(renderer.domElement, firstChild);
+  } else {
+    container.appendChild(renderer.domElement);
+  }
 
   if (gltf.animations && gltf.animations.length) {
     mixer = new THREE.AnimationMixer(gltf.scene);
@@ -468,9 +475,17 @@ function init(gltf) {
 
 let glbReadyCallback = null;
 
+// Même seuil que le choix d'image phone/pc du logo de chargement (style.css) : sous
+// 700px on charge un modèle dédié smartphone, au-dessus le modèle PC habituel. Le
+// reste de la logique (caméra, animation, parallaxe) est identique dans les deux cas.
+const MOBILE_MODEL_BREAKPOINT_PX = 700;
+const MODEL_PATH = window.innerWidth <= MOBILE_MODEL_BREAKPOINT_PX
+  ? 'asset/model/scene-bananin-mobile.glb'
+  : 'asset/model/scene-bananin.glb';
+
 const loader = new GLTFLoader();
 loader.load(
-  'asset/model/scene-bananin.glb',
+  MODEL_PATH,
   (gltf) => {
     loadedGltf = gltf;
     if (glbReadyCallback) glbReadyCallback();
@@ -489,14 +504,18 @@ window.onScene3DReady = function onScene3DReady(callback) {
 
 function startWhenReady() {
   if (loadedGltf) {
-    init(loadedGltf);
-  } else {
+    if (!renderer) {
+      init(loadedGltf);
+    } else {
+      renderer.setAnimationLoop(applyParallaxAndRender);
+    }
+    initPending = false;
+  } else if (!initPending) {
+    initPending = true;
     setTimeout(startWhenReady, 100);
   }
 }
 
 window.startScene3D = function startScene3D() {
-  if (started) return;
-  started = true;
   startWhenReady();
 };

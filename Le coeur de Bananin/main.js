@@ -5,11 +5,11 @@ const ASSETS_TO_PRELOAD = [
   'asset/image/sky.png',
 ];
 
-const fillRect = document.getElementById('progress-fill-rect');
 const loadingScreen = document.getElementById('loading-screen');
 const experience = document.getElementById('experience');
 const revealCircle = document.getElementById('reveal-circle');
 const scene3d = document.getElementById('scene3d');
+const scene3dPart2 = document.getElementById('scene3d-part2');
 const scrollSpace = document.getElementById('scroll-space');
 const scrollHint = document.getElementById('scroll-hint');
 
@@ -120,7 +120,6 @@ audioToggleBtn.addEventListener('click', () => {
   audioToggleBtn.setAttribute('aria-label', muted ? 'Activer le son' : 'Couper le son');
 });
 
-const TRACK_WIDTH = 392;
 const TOTAL_UNITS = ASSETS_TO_PRELOAD.length + 1; // + le modèle 3D
 let loadedCount = 0;
 let glbProgress = 0;
@@ -128,7 +127,9 @@ let glbReady = false;
 
 function refreshProgressBar() {
   const ratio = (loadedCount + glbProgress) / TOTAL_UNITS;
-  fillRect.setAttribute('width', String(TRACK_WIDTH * ratio));
+  if (typeof window.onLoadingProgress === 'function') {
+    window.onLoadingProgress(ratio);
+  }
   if (loadedCount === ASSETS_TO_PRELOAD.length && glbReady) {
     onLoadingComplete();
   }
@@ -156,8 +157,8 @@ function preloadImage(src) {
 function onLoadingComplete() {
   setTimeout(() => {
     loadingScreen.classList.add('fade-out');
-    experience.hidden = false;
-    playRevealAnimation();
+    // Aller directement à la partie 2 (sans experience ni animation de révélation)
+    transitionToScene3D();
     loadingScreen.addEventListener('transitionend', () => {
       loadingScreen.remove();
     }, { once: true });
@@ -184,20 +185,24 @@ function playRevealAnimation() {
     if (progress < 1) {
       requestAnimationFrame(step);
     } else {
-      scrollHint.classList.add('visible');
-      setTimeout(transitionToScene3D, DELAY_BEFORE_SCENE3D);
+      if (scrollHint) scrollHint.classList.add('visible');
+      // Ne pas appeler transitionToScene3D ici si c'est appelé depuis goToPart1
     }
   }
 
   requestAnimationFrame(step);
 }
 
+// Exposer la fonction sur window pour qu'elle soit accessible depuis goToPart1
+window.playRevealAnimation = playRevealAnimation;
+
 function transitionToScene3D() {
-  scene3d.hidden = false;
-  scene3d.classList.add('visible');
+  // Afficher la partie 2 d'abord (au lieu de la partie 1)
+  scene3dPart2.hidden = false;
+  scene3dPart2.classList.add('visible');
   scrollSpace.style.height = `${window.innerHeight * SCROLL_SPACE_MULTIPLIER}px`;
-  if (typeof window.startScene3D === 'function') {
-    window.startScene3D();
+  if (typeof window.startScene3DPart2 === 'function') {
+    window.startScene3DPart2();
   }
   window.addEventListener('scroll', hideScrollHint, { once: true, passive: true });
 }

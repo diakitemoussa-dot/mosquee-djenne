@@ -21,47 +21,25 @@
                     0 0 0 0 0
                     0 0 0 0.03 0" />
         </filter>
-
-        <filter id="rough-edge" x="-20%" y="-50%" width="140%" height="200%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.02 0.15" numOctaves="2" seed="4" result="noise" />
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-
-        <pattern id="hatch-pattern" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-          <line x1="0" y1="0" x2="0" y2="8" stroke="#8b1e2f" stroke-width="2" />
-        </pattern>
-        <pattern id="hatch-pattern-2" width="8" height="8" patternTransform="rotate(-45)" patternUnits="userSpaceOnUse">
-          <line x1="0" y1="0" x2="0" y2="8" stroke="#8b1e2f" stroke-width="1.5" opacity="0.7" />
-        </pattern>
       </defs>
     </svg>
 
     <div class="paper-grain-overlay"></div>
 
+    <div class="logo-progress-wrap">
+      <picture>
+        <source media="(max-width: 700px)" srcset="asset/image/entre%20téléphone.png" />
+        <img class="logo-image" src="asset/image/entre pc.png" alt="Guyo – le cœur du pays dogon" />
+      </picture>
+    </div>
+
     <div class="loading-content">
-      <h1 class="title">GUYO – Le cœur du pays dogon</h1>
-
-      <div class="progress-wrap">
-        <svg class="progress-bar-svg" viewBox="0 0 400 60" preserveAspectRatio="none">
-          <rect class="progress-track" x="4" y="4" width="392" height="52" rx="26" />
-          <clipPath id="progress-clip">
-            <rect id="progress-fill-rect" x="4" y="4" width="0" height="52" rx="26" />
-          </clipPath>
-          <g clip-path="url(#progress-clip)">
-            <rect x="4" y="4" width="392" height="52" fill="url(#fill-gradient)" />
-            <rect x="4" y="4" width="392" height="52" fill="url(#hatch-pattern)" />
-            <rect x="4" y="4" width="392" height="52" fill="url(#hatch-pattern-2)" />
-          </g>
-          <defs>
-            <linearGradient id="fill-gradient" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#a12c3f" />
-              <stop offset="100%" stop-color="#c9536b" />
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
-
-      <p class="loading-label">LOADING<span class="dots">...</span></p>
+      <svg class="loading-draw-svg" viewBox="0 0 300 30" preserveAspectRatio="xMidYMid meet">
+        <path id="loading-draw-line" class="loading-draw-line"
+          d="M8,15 Q45,2 82,15 T156,15 T230,15 T292,15"
+          fill="none" />
+      </svg>
+      <p class="loading-label"><span id="loading-word">LOADING</span><span class="dots">...</span></p>
     </div>
   </div>
 
@@ -144,12 +122,14 @@
     {
       "imports": {
         "three": "https://unpkg.com/three@0.164.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.164.0/examples/jsm/"
+        "three/addons/": "https://unpkg.com/three@0.164.0/examples/jsm/",
+        "animejs": "https://unpkg.com/animejs@4.5.0/dist/modules/index.js"
       }
     }
   </script>
   <script src="main.js"></script>
   <script src="paper-transition.js"></script>
+  <script type="module" src="loading-animation.js"></script>
   <script type="module" src="scene3d.js"></script>
   <script type="module" src="scene3d-part2.js"></script>
 </body>

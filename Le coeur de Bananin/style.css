@@ -50,42 +50,45 @@ body {
 }
 
 .loading-content {
-  position: relative;
+  position: absolute;
+  left: 50%;
+  bottom: 9%;
+  transform: translateX(-50%);
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
-  padding: 0 24px;
+  gap: 6px;
 }
 
-.title {
-  font-size: clamp(2.2rem, 6vw, 3.8rem);
-  font-weight: 700;
-  color: #2f3b45;
-  text-shadow: 0 1px 0 rgba(47, 59, 69, 0.15);
-  text-align: center;
-}
-
-.progress-wrap {
-  width: min(420px, 80vw);
-}
-
-.progress-bar-svg {
+/* Logo Guyo en plein écran comme fond de l'écran de chargement. */
+.logo-progress-wrap {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
+  height: 100%;
+}
+
+.logo-image {
   display: block;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+}
+
+/* Ligne décorative dessinée à la main (anime.js createDrawable + animate), dont le
+   tracé progresse en fonction du chargement réel — remplace l'ancienne barre de
+   progression rectangulaire par un effet "dessin" cohérent avec le thème papier/encre. */
+.loading-draw-svg {
+  width: min(300px, 60vw);
+  height: 30px;
   overflow: visible;
 }
 
-.progress-track {
-  fill: rgba(200, 190, 170, 0.15);
-  stroke: #2f3b45;
-  stroke-width: 2.5;
-  filter: url(#rough-edge);
-}
-
-#progress-fill-rect {
-  transition: width 0.25s ease-out;
+.loading-draw-line {
+  stroke: #a12c3f;
+  stroke-width: 3;
+  stroke-linecap: round;
 }
 
 .loading-label {
@@ -94,6 +97,13 @@ body {
   letter-spacing: 0.35em;
   color: #2f3b45;
   text-transform: uppercase;
+}
+
+/* Lettres de "LOADING" révélées une à une par anime.js (split) au démarrage. */
+#loading-word .char {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(6px);
 }
 
 .dots {
@@ -252,6 +262,32 @@ body {
   text-align: right;
 }
 
+/* Sur petit écran, .story-text (max-width 42% + police desktop) fait passer chaque
+   mot à la ligne : on élargit la zone de texte et on réduit la police pour que les
+   phrases se lisent normalement. Le halo (::before) suit automatiquement puisqu'il
+   est positionné relativement à .story-text lui-même. */
+@media (max-width: 700px) {
+  .story-text {
+    max-width: 78%;
+    font-size: clamp(1.5rem, 6vw, 2.2rem);
+    line-height: 1.3;
+  }
+
+  #story-text-1,
+  #story-text-2,
+  #story-text-3 {
+    top: 17%;
+    bottom: auto;
+  }
+
+  #story-text-4,
+  #story-text-5 {
+    top: 17%;
+    bottom: auto;
+    transform: none;
+  }
+}
+
 .story-text-mid {
   top: 50%;
   bottom: auto;
@@ -310,6 +346,22 @@ body {
   top: 44%;
 }
 
+/* Sur petit écran, .story-hud (top:50%, centré) chevauche le modèle 3D affiché
+   dessous : on le remonte en haut comme les blocs .story-text (règle placée après
+   .story-hud/.story-hud-up pour gagner la cascade à spécificité égale). */
+@media (max-width: 700px) {
+  .story-hud,
+  .story-hud-up {
+    top: 8%;
+    transform: none;
+    /* Largeur bien plus grande qu'en desktop (48vw) : à cette largeur, des mots
+       longs comme "génération" dépassaient le bloc à gauche (texte aligné à
+       droite) et étaient rognés par overflow-x:hidden sur body. */
+    width: 82vw;
+    right: 9%;
+  }
+}
+
 .hud-label {
   font-family: 'Orbitron', sans-serif;
   font-weight: 700;
@@ -332,6 +384,10 @@ body {
   color: #55415d;
   margin: 0;
   opacity: 0.85;
+  /* Filet de sécurité : si un mot est plus large que le bloc (texte aligné à
+     droite), il se casse au lieu de dépasser à gauche et d'être rogné par
+     overflow-x:hidden sur body. */
+  overflow-wrap: break-word;
 }
 
 #story-hud-4 .hud-label-sm {
@@ -340,6 +396,34 @@ body {
 
 #story-hud-4 .hud-sub {
   font-size: clamp(1.1rem, 1.7vw, 1.4rem);
+}
+
+/* Regroupe les ajustements mobiles pour .hud-label/.hud-label-sm/.hud-sub : placés
+   après leurs règles de base (et après les surcharges #story-hud-4) pour gagner la
+   cascade à spécificité égale/supérieure. "white-space: normal" est le correctif
+   principal : en nowrap, un titre comme "LES FONDATIONS" devenait plus large que
+   son conteneur et dépassait à gauche, rogné par overflow-x:hidden sur body. */
+@media (max-width: 700px) {
+  .hud-label {
+    font-size: clamp(2.6rem, 10vw, 3.6rem);
+    white-space: normal;
+  }
+
+  .hud-label-sm {
+    font-size: clamp(1.7rem, 6.5vw, 2.3rem);
+  }
+
+  .hud-sub {
+    font-size: clamp(0.95rem, 3vw, 1.15rem);
+  }
+
+  #story-hud-4 .hud-label-sm {
+    font-size: clamp(1.7rem, 6.5vw, 2.3rem);
+  }
+
+  #story-hud-4 .hud-sub {
+    font-size: clamp(0.95rem, 3vw, 1.15rem);
+  }
 }
 
 .hud-cursor {
