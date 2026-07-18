@@ -19,6 +19,18 @@ const clock = new THREE.Clock();
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
+// Suivi continu de la souris pour l'effet de dispersion des particules de poussière
+// (setupPlaneButton met à jour `mouse` uniquement au clic, on ajoute le suivi au mousemove ici).
+window.addEventListener('mousemove', (event) => {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+}, { passive: true });
+
+const dustMousePlane = new THREE.Plane();
+const dustMouseIntersect = new THREE.Vector3();
+const dustMouseTarget = new THREE.Vector3();
+const dustPlaneNormal = new THREE.Vector3();
+
 // Bulle de texte et gestion de sa visibilité
 let textBubble = null;
 const BUBBLE_VISIBILITY_DISTANCE = 6; // Distance max pour voir la bulle
@@ -164,12 +176,33 @@ function createTextBubble(text) {
   ctx.fill();
   ctx.stroke();
 
-  // Texte noir
+  // Texte noir, avec retour à la ligne automatique pour les phrases longues
   ctx.fillStyle = '#000000';
   ctx.font = 'bold 20px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, canvas.width / 2, canvas.height / 2 - 6);
+
+  const maxTextWidth = canvas.width - 24;
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = '';
+  words.forEach((word) => {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (ctx.measureText(testLine).width > maxTextWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  });
+  if (currentLine) lines.push(currentLine);
+
+  const lineHeight = 22;
+  const textAreaCenterY = (canvas.height - 12) / 2;
+  const startY = textAreaCenterY - ((lines.length - 1) * lineHeight) / 2;
+  lines.forEach((line, i) => {
+    ctx.fillText(line, canvas.width / 2, startY + i * lineHeight);
+  });
 
   const texture = new THREE.CanvasTexture(canvas);
   const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
@@ -299,7 +332,7 @@ function init(gltf) {
 
   // Bulle aux coordonnées précises (depuis Blender, converties en Three.js)
   // Conversion Blender (X, Y, Z) → Three.js (X, Z, -Y)
-  textBubble = createTextBubble('attrape l\'avion en carton !');
+  textBubble = createTextBubble('clique sur l\'avion en papier et découvre !');
   scene.add(textBubble);
   textBubble.position.set(-28.978, 4.65, 16.621);
   textBubble.scale.multiplyScalar(0.15);
@@ -330,8 +363,10 @@ function init(gltf) {
 
   window.addEventListener('resize', onResize);
 
-  // Créer les particules de poussière
+  // Créer les particules de poussière, centrées sur le modèle (la caméra orbite
+  // autour de ce point, pas de l'origine de la scène) pour qu'elles soient visibles.
   const dustParticles = createDustParticles(scene);
+  dustParticles.position.copy(controls.target);
   scene.add(dustParticles);
   window.dustParticles = dustParticles; // Expose globally pour la boucle d'animation
 
@@ -344,7 +379,21 @@ function init(gltf) {
 
     // Mettre à jour les particules de poussière
     if (window.dustParticles && window.dustParticles.userData.dustMaterial) {
-      window.dustParticles.userData.dustMaterial.uniforms.time.value = performance.now() * 0.001;
+      const dustMaterial = window.dustParticles.userData.dustMaterial;
+      dustMaterial.uniforms.time.value = performance.now() * 0.001;
+
+      // Projeter le curseur sur un plan face caméra, à la profondeur du nuage de
+      // particules, pour obtenir un point 3D que le shader peut utiliser pour disperser
+      // les particules proches (effet de répulsion au passage du curseur).
+      raycaster.setFromCamera(mouse, camera);
+      camera.getWorldDirection(dustPlaneNormal);
+      dustMousePlane.setFromNormalAndCoplanarPoint(dustPlaneNormal, window.dustParticles.position);
+      if (raycaster.ray.intersectPlane(dustMousePlane, dustMouseIntersect)) {
+        dustMouseTarget.copy(dustMouseIntersect).sub(window.dustParticles.position);
+      }
+      // Lissage (lerp) de la position utilisée par le shader vers la cible : l'effet
+      // suit le curseur avec un net retard doux, au lieu de sauter instantanément.
+      dustMaterial.uniforms.mouseWorld.value.lerp(dustMouseTarget, 0.035);
     }
 
     // Gestion de la visibilité de la bulle selon la distance caméra
@@ -425,7 +474,10 @@ function createDustParticles(scene) {
     oscillationAmount: 2,
     opacity: 0.4,
     particleSize: 2.0,
-    color: new THREE.Color(200 / 255, 200 / 255, 200 / 255)
+    color: new THREE.Color(200 / 255, 200 / 255, 200 / 255),
+    // Rayon d'influence du curseur et force de dispersion des particules proches
+    mouseRadius: 2.2,
+    mouseStrength: 1.6
   };
 
   // Créer la géométrie
@@ -453,6 +505,10 @@ function createDustParticles(scene) {
     uniform float oscillationSpeed;
     uniform float oscillationAmount;
     uniform float radius;
+    uniform float particleSize;
+    uniform vec3 mouseWorld;
+    uniform float mouseRadius;
+    uniform float mouseStrength;
 
     void main() {
       vec3 pos = position;
@@ -469,9 +525,22 @@ function createDustParticles(scene) {
       pos.x += sin(time * oscillationSpeed + position.z * 0.1) * oscillationAmount;
       pos.z += cos(time * oscillationSpeed * 0.7 + position.x * 0.1) * oscillationAmount;
 
+      // Répulsion : le curseur disperse les particules proches (mouseWorld est déjà
+      // exprimé dans l'espace local du nuage, lissé côté JS chaque frame). smoothstep
+      // donne une transition douce au lieu d'un dégradé linéaire abrupt.
+      vec3 toParticle = pos - mouseWorld;
+      float mouseDist = length(toParticle);
+      if (mouseDist < mouseRadius && mouseDist > 0.0001) {
+        float t = 1.0 - mouseDist / mouseRadius;
+        float force = t * t * (3.0 - 2.0 * t) * mouseStrength;
+        pos += (toParticle / mouseDist) * force;
+      }
+
       // Projection caméra
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-      gl_PointSize = 2.0;
+      vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+      gl_Position = projectionMatrix * mvPosition;
+      // Taille atténuée par la distance pour un effet volumétrique cohérent
+      gl_PointSize = particleSize * (80.0 / -mvPosition.z);
     }
   `;
 
@@ -505,7 +574,11 @@ function createDustParticles(scene) {
       oscillationAmount: { value: config.oscillationAmount },
       radius: { value: config.radius },
       dustColor: { value: config.color },
-      opacity: { value: config.opacity }
+      opacity: { value: config.opacity },
+      particleSize: { value: config.particleSize },
+      mouseWorld: { value: new THREE.Vector3(1e6, 1e6, 1e6) },
+      mouseRadius: { value: config.mouseRadius },
+      mouseStrength: { value: config.mouseStrength }
     },
     vertexShader: vertexShader,
     fragmentShader: fragmentShader,
@@ -541,14 +614,12 @@ window.setScene3DPart2Visible = function setScene3DPart2Visible(visible) {
 
 // Fonction pour naviguer vers la partie 1
 window.goToPart1 = function goToPart1() {
-  container.classList.remove('visible');
-  setTimeout(() => {
+  const revealPart1 = () => {
+    container.classList.remove('visible');
     container.hidden = true;
-    // Afficher et démarrer la partie 1 avec animation du sky aquarelle
     const scene3dDiv = document.getElementById('scene3d');
     if (scene3dDiv) {
       scene3dDiv.hidden = false;
-      // Déclencher l'animation du sky aquarelle (playRevealAnimation)
       if (typeof window.playRevealAnimation === 'function') {
         window.playRevealAnimation();
       }
@@ -557,5 +628,12 @@ window.goToPart1 = function goToPart1() {
       }
       scene3dDiv.classList.add('visible');
     }
-  }, 300);
+  };
+
+  if (typeof window.playPaperUnfoldTransition === 'function') {
+    window.playPaperUnfoldTransition(revealPart1);
+  } else {
+    // Fallback si paper-transition.js n'a pas chargé : comportement direct.
+    revealPart1();
+  }
 };
