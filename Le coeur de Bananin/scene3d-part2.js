@@ -330,12 +330,22 @@ function init(gltf) {
 
   window.addEventListener('resize', onResize);
 
+  // Créer les particules de poussière
+  const dustParticles = createDustParticles(scene);
+  scene.add(dustParticles);
+  window.dustParticles = dustParticles; // Expose globally pour la boucle d'animation
+
   clock.start();
   renderer.setAnimationLoop(() => {
     controls.update();
     preventTerrainClipping();
     if (mixer) mixer.update(clock.getDelta());
     if (skyMaterial) skyMaterial.uniforms.time.value = clock.elapsedTime;
+
+    // Mettre à jour les particules de poussière
+    if (window.dustParticles && window.dustParticles.userData.dustMaterial) {
+      window.dustParticles.userData.dustMaterial.uniforms.time.value = performance.now() * 0.001;
+    }
 
     // Gestion de la visibilité de la bulle selon la distance caméra
     if (textBubble) {
@@ -471,11 +481,15 @@ function createDustParticles(scene) {
     uniform float opacity;
 
     void main() {
-      // Point circulaire avec falloff
-      vec2 pc = gl_PointCoord - vec2(0.5);
-      float dist = length(pc);
+      // Créer un disque doux (gradient radial)
+      vec2 center = gl_PointCoord - 0.5;
+      float dist = length(center);
+
+      // Discard pixels en dehors du rayon
+      if (dist > 0.5) discard;
+
+      // Dégradé alpha : opaque au centre, transparent aux bords
       float alpha = (1.0 - dist * 2.0) * opacity;
-      alpha = max(0.0, alpha);
 
       gl_FragColor = vec4(dustColor, alpha);
     }
