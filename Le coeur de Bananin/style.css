@@ -74,6 +74,8 @@ body {
   width: 100vw;
   height: 100vh;
   object-fit: cover;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
 }
 
 /* Ligne décorative dessinée à la main (anime.js createDrawable + animate), dont le

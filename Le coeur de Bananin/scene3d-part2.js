@@ -394,6 +394,32 @@ function init(gltf) {
       // Lissage (lerp) de la position utilisée par le shader vers la cible : l'effet
       // suit le curseur avec un net retard doux, au lieu de sauter instantanément.
       dustMaterial.uniforms.mouseWorld.value.lerp(dustMouseTarget, 0.035);
+
+      // Déplacement permanent : on écrit directement dans l'attribut position
+      // (pas seulement dans le shader) pour que les particules écartées par le
+      // curseur restent écartées au lieu de revenir à leur position de départ.
+      const posAttr = window.dustParticles.geometry.attributes.position;
+      const posArr = posAttr.array;
+      const mw = dustMaterial.uniforms.mouseWorld.value;
+      const mouseRadius = dustMaterial.uniforms.mouseRadius.value;
+      const permanentPushStrength = 0.6;
+      let dustMoved = false;
+      for (let i = 0; i < posArr.length; i += 3) {
+        const dx = posArr[i] - mw.x;
+        const dy = posArr[i + 1] - mw.y;
+        const dz = posArr[i + 2] - mw.z;
+        const distSq = dx * dx + dy * dy + dz * dz;
+        if (distSq < mouseRadius * mouseRadius && distSq > 1e-8) {
+          const dist = Math.sqrt(distSq);
+          const t = 1 - dist / mouseRadius;
+          const force = t * t * permanentPushStrength;
+          posArr[i] += (dx / dist) * force;
+          posArr[i + 1] += (dy / dist) * force;
+          posArr[i + 2] += (dz / dist) * force;
+          dustMoved = true;
+        }
+      }
+      if (dustMoved) posAttr.needsUpdate = true;
     }
 
     // Gestion de la visibilité de la bulle selon la distance caméra
@@ -466,14 +492,14 @@ function startWhenReady() {
 function createDustParticles(scene) {
   // Configuration des particules
   const config = {
-    particleCount: 800,
+    particleCount: 1300,
     radius: 50,
     speed: 0.005,
     gravity: 0.0005,
     oscillationSpeed: 0.3,
     oscillationAmount: 2,
     opacity: 0.4,
-    particleSize: 2.0,
+    particleSize: 1.0,
     color: new THREE.Color(200 / 255, 200 / 255, 200 / 255),
     // Rayon d'influence du curseur et force de dispersion des particules proches
     mouseRadius: 2.2,
@@ -495,7 +521,9 @@ function createDustParticles(scene) {
     positions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
   }
 
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const positionAttribute = new THREE.BufferAttribute(positions, 3);
+  positionAttribute.setUsage(THREE.DynamicDrawUsage);
+  geometry.setAttribute('position', positionAttribute);
 
   // Vertex Shader
   const vertexShader = `
@@ -511,30 +539,11 @@ function createDustParticles(scene) {
     uniform float mouseStrength;
 
     void main() {
+      // La position vient directement de l'attribut, déplacé de façon permanente
+      // côté CPU quand le curseur pousse une particule : pas de gravité, pas
+      // d'oscillation et pas de répulsion temporaire ici, pour qu'une particule
+      // poussée reste exactement là où elle a été poussée.
       vec3 pos = position;
-
-      // Gravité : descente lente et cyclique
-      pos.y -= time * speed * gravity;
-
-      // Régénération : quand y trop bas, remonter au sommet
-      if (pos.y < -radius * 1.5) {
-        pos.y = radius;
-      }
-
-      // Oscillation horizontale (flottement naturel)
-      pos.x += sin(time * oscillationSpeed + position.z * 0.1) * oscillationAmount;
-      pos.z += cos(time * oscillationSpeed * 0.7 + position.x * 0.1) * oscillationAmount;
-
-      // Répulsion : le curseur disperse les particules proches (mouseWorld est déjà
-      // exprimé dans l'espace local du nuage, lissé côté JS chaque frame). smoothstep
-      // donne une transition douce au lieu d'un dégradé linéaire abrupt.
-      vec3 toParticle = pos - mouseWorld;
-      float mouseDist = length(toParticle);
-      if (mouseDist < mouseRadius && mouseDist > 0.0001) {
-        float t = 1.0 - mouseDist / mouseRadius;
-        float force = t * t * (3.0 - 2.0 * t) * mouseStrength;
-        pos += (toParticle / mouseDist) * force;
-      }
 
       // Projection caméra
       vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);

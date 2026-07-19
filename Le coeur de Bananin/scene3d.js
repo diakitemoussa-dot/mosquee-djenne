@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 const container = document.getElementById('scene3d');
 const scrollSpace = document.getElementById('scroll-space');
@@ -483,7 +484,11 @@ const MODEL_PATH = window.innerWidth <= MOBILE_MODEL_BREAKPOINT_PX
   ? 'asset/model/scene-bananin-mobile.glb'
   : 'asset/model/scene-bananin.glb';
 
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://unpkg.com/three@0.164.0/examples/jsm/libs/draco/');
+
 const loader = new GLTFLoader();
+loader.setDRACOLoader(dracoLoader);
 loader.load(
   MODEL_PATH,
   (gltf) => {

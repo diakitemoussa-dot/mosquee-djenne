@@ -1,5 +1,69 @@
 import { animate, createDrawable, splitText } from 'animejs';
 
+// Image du logo pixellisée qui se "netteise" progressivement pendant le
+// chargement réel : on la dessine dans un canvas basse résolution (blocs
+// visibles) puis on augmente cette résolution au même rythme que les assets
+// se chargent, jusqu'à une image nette en pleine définition.
+const pixelCanvas = document.getElementById('logo-pixelate-canvas');
+const pixelCtx = pixelCanvas.getContext('2d');
+const bufferCanvas = document.createElement('canvas');
+const bufferCtx = bufferCanvas.getContext('2d');
+
+const isMobileLogo = window.matchMedia('(max-width: 700px)').matches;
+const logoImage = new Image();
+logoImage.src = isMobileLogo
+  ? 'asset/image/entre téléphone.png'
+  : 'asset/image/entre pc.png';
+
+const pixelState = { ratio: 0 };
+const MIN_BLOCK_DIM = 6; // largeur (en "pixels") de l'image la plus grossière
+
+function drawImageCover(ctx, img, dw, dh) {
+  const imgRatio = img.naturalWidth / img.naturalHeight;
+  const boxRatio = dw / dh;
+  let sx, sy, sw, sh;
+  if (imgRatio > boxRatio) {
+    sh = img.naturalHeight;
+    sw = sh * boxRatio;
+    sx = (img.naturalWidth - sw) / 2;
+    sy = 0;
+  } else {
+    sw = img.naturalWidth;
+    sh = sw / boxRatio;
+    sx = 0;
+    sy = (img.naturalHeight - sh) / 2;
+  }
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, dw, dh);
+}
+
+function drawPixelated(ratio) {
+  if (!logoImage.complete || !logoImage.naturalWidth) return;
+  const w = pixelCanvas.width;
+  const h = pixelCanvas.height;
+  if (!w || !h) return;
+
+  const smallW = Math.max(MIN_BLOCK_DIM, Math.round(MIN_BLOCK_DIM + (w - MIN_BLOCK_DIM) * ratio));
+  const smallH = Math.max(1, Math.round(smallW * (h / w)));
+
+  bufferCanvas.width = smallW;
+  bufferCanvas.height = smallH;
+  drawImageCover(bufferCtx, logoImage, smallW, smallH);
+
+  pixelCtx.imageSmoothingEnabled = false;
+  pixelCtx.clearRect(0, 0, w, h);
+  pixelCtx.drawImage(bufferCanvas, 0, 0, smallW, smallH, 0, 0, w, h);
+}
+
+function resizePixelCanvas() {
+  pixelCanvas.width = window.innerWidth;
+  pixelCanvas.height = window.innerHeight;
+  drawPixelated(pixelState.ratio);
+}
+
+window.addEventListener('resize', resizePixelCanvas);
+logoImage.onload = resizePixelCanvas;
+resizePixelCanvas();
+
 // Effet d'écriture : les lettres de "LOADING" apparaissent une à une au démarrage
 // (indépendant du pourcentage de chargement réel, purement décoratif à l'entrée).
 const { chars } = splitText('#loading-word', { chars: true });
@@ -24,5 +88,11 @@ window.onLoadingProgress = function onLoadingProgress(ratio) {
     draw: `0 ${currentRatio}`,
     duration: 250,
     ease: 'outSine',
+  });
+  animate(pixelState, {
+    ratio: currentRatio,
+    duration: 400,
+    ease: 'outSine',
+    onUpdate: () => drawPixelated(pixelState.ratio),
   });
 };
