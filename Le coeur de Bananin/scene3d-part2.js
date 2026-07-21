@@ -648,11 +648,13 @@ function init(gltf) {
       planeObject.rotation.z += 0.01;
     }
 
-    // Animation fluide de la bulle : oscillation douce en Y + rotation légère en Z
+    // Animation de la bulle : secouement subtil (shake) pour attirer l'attention
     if (textBubble) {
       const t = clock.elapsedTime;
-      textBubble.position.y = textBubbleBaseY + Math.sin(t * 2) * 0.3; // Oscillation : ±0.3 unités
-      textBubble.rotation.z = Math.sin(t * 1.5) * 0.15; // Rotation légère en Z : ±0.15 rad
+      // Tremblements rapides en X et Y (petite amplitude ±0.1) pour un effet "shake"
+      textBubble.position.x = -28.978 + Math.sin(t * 8) * 0.1 + Math.cos(t * 6.3) * 0.08;
+      textBubble.position.y = textBubbleBaseY + Math.sin(t * 7.5) * 0.08 + Math.cos(t * 5.7) * 0.06;
+      textBubble.rotation.z = Math.sin(t * 6) * 0.08; // Rotation subtile qui suit le shake
     }
 
     // Clignotement continu du halo jaune sur la poussière : lueur toujours forte,
