@@ -168,15 +168,22 @@ function maybeTriggerBikeBell(progress) {
 
 // Sons des textes narratifs : boucle tant que l'utilisateur reste immobile dans la section,
 // fade out progressif dès qu'il scrolle ou quitte la section.
+//
+// IMPORTANT : ce système est piloté par la boucle de rendu (à chaque frame), PAS par les
+// events 'scroll'. Les events 'scroll' ne se déclenchent plus une fois que l'utilisateur
+// arrête de bouger — si on pilotait le fade depuis 'scroll', il se figerait dès que le
+// scroll s'arrête (le volume resterait bloqué à mi-fondu et le son boucler indéfiniment).
+// En pilotant depuis le render loop (qui tourne en continu), le fade progresse dans le
+// temps même sans nouvel event de scroll, et l'immobilité se mesure par un vrai délai.
 const STORY_SOUNDS = [
   {
     start: 0.12,
+    end: 0.155, // doit correspondre à la plage de story-text-3 dans STORY_TEXTS
     audio: new Audio('asset/audio/pilon (1).mp3'),
     state: 'idle', // idle | playing | fading
     baseVolume: 0.5,
     fadeOutDuration: 800, // ms
     fadeOutStart: null,
-    lastScrollY: 0,
   }, // story-text-3
 ];
 
@@ -185,12 +192,16 @@ STORY_SOUNDS.forEach((sound) => {
   sound.audio.loop = true;
 });
 
-function maybeTriggerStorySound(progress) {
+// Délai sans event 'scroll' au bout duquel on considère l'utilisateur immobile.
+const SCROLL_IDLE_DELAY_MS = 150;
+let lastScrollEventTime = performance.now();
+
+function updateStorySounds() {
+  const progress = getScrollProgress();
+  const isIdle = performance.now() - lastScrollEventTime > SCROLL_IDLE_DELAY_MS;
+
   STORY_SOUNDS.forEach((sound) => {
-    const isInSection = progress >= sound.start;
-    const currentScrollY = window.scrollY;
-    const hasScrolled = Math.abs(currentScrollY - sound.lastScrollY) > 1; // Tolérance de 1px
-    sound.lastScrollY = currentScrollY;
+    const isInSection = progress >= sound.start && progress <= sound.end;
 
     if (isInSection && sound.state === 'idle') {
       // Entrer dans la section : démarrer le son
@@ -200,21 +211,21 @@ function maybeTriggerStorySound(progress) {
       sound.audio.currentTime = 0;
       sound.audio.play().catch(() => {});
     } else if (isInSection && sound.state === 'playing') {
-      // Tant qu'on est dans la section
-      if (hasScrolled) {
-        // L'utilisateur scrolle : commencer le fade out
+      if (isIdle) {
+        // Utilisateur immobile dans la section : laisser le son boucler
+        sound.audio.volume = sound.baseVolume;
+      } else {
+        // Utilisateur en train de scroller : commencer le fade out
         sound.state = 'fading';
         sound.fadeOutStart = performance.now();
-      } else {
-        // L'utilisateur n'a pas bougé : laisser le son boucler
-        sound.audio.volume = sound.baseVolume;
       }
     } else if (!isInSection && sound.state === 'playing') {
       // Quitter la section : commencer immédiatement le fade out
       sound.state = 'fading';
       sound.fadeOutStart = performance.now();
     } else if (sound.state === 'fading') {
-      // Pendant le fade out : réduire progressivement le volume
+      // Pendant le fade out : réduire progressivement le volume, frame après frame,
+      // que le scroll continue ou non.
       const elapsed = performance.now() - sound.fadeOutStart;
       const fadeProgress = Math.min(elapsed / sound.fadeOutDuration, 1);
       sound.audio.volume = sound.baseVolume * (1 - fadeProgress);
@@ -224,6 +235,11 @@ function maybeTriggerStorySound(progress) {
         sound.audio.pause();
         sound.audio.currentTime = 0;
         sound.state = 'idle';
+      } else if (isInSection && isIdle) {
+        // L'utilisateur est revenu immobile dans la section avant la fin du fade :
+        // reprendre en boucle au volume normal plutôt que de finir de s'éteindre.
+        sound.state = 'playing';
+        sound.audio.volume = sound.baseVolume;
       }
     }
   });
@@ -308,6 +324,8 @@ function onMouseMove(event) {
 }
 
 function applyParallaxAndRender() {
+  updateStorySounds();
+
   // Si la souris est immobile depuis un court instant, la cible revient au centre.
   if (performance.now() - lastMoveTime > IDLE_DELAY_MS) {
     mouseTarget.x *= IDLE_RECENTER;
@@ -433,7 +451,6 @@ function setProgress(progress) {
   updateStoryTexts(progress);
   maybeTriggerFirstEagleCry(progress);
   maybeTriggerBikeBell(progress);
-  maybeTriggerStorySound(progress);
   if (!mixer || !actions.length) return;
   // On repart de la base propre (sans décalage de parallaxe) avant de rejouer l'animation :
   // sinon, si la caméra n'a pas sa propre animation à cet instant, mixer.update() ne
@@ -489,6 +506,7 @@ function updateWindSpeedFromScroll() {
 
 let rafPending = false;
 function onScroll() {
+  lastScrollEventTime = performance.now();
   updateWindSpeedFromScroll();
   if (rafPending) return;
   rafPending = true;
