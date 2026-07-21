@@ -66,6 +66,7 @@ const dustPlaneNormal = new THREE.Vector3();
 
 // Bulle de texte, toujours visible
 let textBubble = null;
+let textBubbleBaseY = 0; // Position Y de départ pour l'oscillation
 
 // Contrôle de vitesse du Plane
 let planeObject = null;
@@ -272,6 +273,22 @@ let skyMaterial = null;
 
 function setupPlaneButton(plane, onClickCallback) {
   plane.userData.isButton = true;
+  let isHoveringPlane = false;
+
+  const onMouseMove = (event) => {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(plane);
+
+    const hovering = intersects.length > 0;
+    if (hovering !== isHoveringPlane) {
+      isHoveringPlane = hovering;
+      document.body.style.cursor = hovering ? 'pointer' : 'default';
+    }
+  };
+
   const onMouseClick = (event) => {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -284,6 +301,7 @@ function setupPlaneButton(plane, onClickCallback) {
     }
   };
 
+  window.addEventListener('mousemove', onMouseMove);
   window.addEventListener('click', onMouseClick);
   plane.userData.clickListener = onMouseClick;
 }
@@ -535,6 +553,7 @@ function init(gltf) {
   textBubble = createTextBubble('clique sur l\'avion en papier et découvre !');
   scene.add(textBubble);
   textBubble.position.set(-28.978, 4.65, 16.621);
+  textBubbleBaseY = 4.65; // Stocker la position Y de départ pour l'oscillation
   textBubble.scale.multiplyScalar(0.15);
   textBubble.visible = true;
 
@@ -627,6 +646,13 @@ function init(gltf) {
     // Rotation lente et constante du Plane
     if (planeObject) {
       planeObject.rotation.z += 0.01;
+    }
+
+    // Animation fluide de la bulle : oscillation douce en Y + rotation légère en Z
+    if (textBubble) {
+      const t = clock.elapsedTime;
+      textBubble.position.y = textBubbleBaseY + Math.sin(t * 2) * 0.3; // Oscillation : ±0.3 unités
+      textBubble.rotation.z = Math.sin(t * 1.5) * 0.15; // Rotation légère en Z : ±0.15 rad
     }
 
     // Clignotement continu du halo jaune sur la poussière : lueur toujours forte,
