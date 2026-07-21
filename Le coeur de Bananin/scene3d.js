@@ -105,6 +105,7 @@ window.setChirpMuted = function setChirpMuted(muted) {
     pool.forEach((audio) => { audio.muted = muted; });
   });
   BIKE_BELL_AUDIO.muted = muted;
+  STORY_SOUNDS.forEach((sound) => { sound.audio.muted = muted; });
 };
 
 function playBirdChirp() {

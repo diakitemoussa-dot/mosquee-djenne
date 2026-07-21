@@ -28,6 +28,10 @@ ambientAudio.loop = true;
 ambientAudio.preload = 'auto';
 ambientAudio.volume = 0;
 
+// Son joué à l'entrée dans la partie 2 (juste après le chargement).
+const entranceAudio = new Audio("asset/audio/son d'entre.mp3");
+entranceAudio.preload = 'auto';
+
 const AMBIENT_BASE_VOLUME = 0.28;
 const AMBIENT_FADE_IN_MS = 2500;
 // Impression de vitesse : quand l'utilisateur scrolle vite, le vent souffle plus fort
@@ -44,8 +48,12 @@ let audioMuted = false;
 
 function applyMuteState() {
   ambientAudio.muted = audioMuted;
+  entranceAudio.muted = audioMuted;
   if (typeof window.setChirpMuted === 'function') {
     window.setChirpMuted(audioMuted);
+  }
+  if (typeof window.setPart2Muted === 'function') {
+    window.setPart2Muted(audioMuted);
   }
 }
 
@@ -116,6 +124,37 @@ const AMBIENT_UNLOCK_EVENTS = ['pointerdown', 'click', 'keydown', 'touchstart'];
 AMBIENT_UNLOCK_EVENTS.forEach((evt) => {
   window.addEventListener(evt, tryStartAmbient, { passive: true });
 });
+
+// Le son d'entrée doit démarrer exactement au moment de l'entrée dans la partie 2,
+// pas au prochain geste (contrairement à l'ambiance de vent, qui peut attendre sans
+// problème). Comme cette entrée n'est pas déclenchée par un clic, le navigateur bloque
+// souvent la lecture avec son à cet instant précis. Pour rester synchronisé malgré ce
+// blocage, on démarre le son MUET (l'autoplay muet n'est jamais bloqué) puis on le
+// démasque dès le premier vrai geste utilisateur, sans le relancer plus tard.
+let entrancePlayed = false;
+
+function unmuteEntranceSound() {
+  entranceAudio.muted = audioMuted;
+  AMBIENT_UNLOCK_EVENTS.forEach((evt) => {
+    window.removeEventListener(evt, unmuteEntranceSound);
+  });
+}
+
+function tryPlayEntranceSound() {
+  if (entrancePlayed) return;
+  entrancePlayed = true;
+  entranceAudio.currentTime = 0;
+  entranceAudio.muted = audioMuted;
+  entranceAudio.play().catch(() => {
+    // Lecture avec son bloquée : démarrer muet pour rester synchronisé avec l'entrée,
+    // puis démasquer dès le premier geste utilisateur réel.
+    entranceAudio.muted = true;
+    entranceAudio.play().catch(() => {});
+    AMBIENT_UNLOCK_EVENTS.forEach((evt) => {
+      window.addEventListener(evt, unmuteEntranceSound, { passive: true });
+    });
+  });
+}
 
 const audioToggleBtn = document.getElementById('audio-toggle');
 audioToggleBtn.addEventListener('click', () => {
@@ -205,6 +244,7 @@ function transitionToScene3D() {
   scene3dPart2.hidden = false;
   scene3dPart2.classList.add('visible');
   scrollSpace.style.height = `${window.innerHeight * SCROLL_SPACE_MULTIPLIER}px`;
+  tryPlayEntranceSound();
   if (typeof window.startScene3DPart2 === 'function') {
     window.startScene3DPart2();
   }
