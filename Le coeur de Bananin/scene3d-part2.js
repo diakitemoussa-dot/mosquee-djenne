@@ -64,9 +64,8 @@ const dustMouseIntersect = new THREE.Vector3();
 const dustMouseTarget = new THREE.Vector3();
 const dustPlaneNormal = new THREE.Vector3();
 
-// Bulle de texte et gestion de sa visibilité
+// Bulle de texte, toujours visible
 let textBubble = null;
-const BUBBLE_VISIBILITY_DISTANCE = 6; // Distance max pour voir la bulle
 
 // Contrôle de vitesse du Plane
 let planeObject = null;
@@ -249,6 +248,20 @@ const CAMERA_ENTRY_ROTATION = new THREE.Euler(
   THREE.MathUtils.degToRad(94.607),
   THREE.MathUtils.degToRad(27.221),
   0,
+  'XYZ'
+);
+
+// Variante caméra pour petit écran (mobile), depuis le viewport Blender :
+// Location (-19.154, -14.879, 6.2046) / Rotation (79.474°, 4.4385°, -609.97°) XYZ Euler.
+// Conversion rigoureuse Z-up (Blender) -> Y-up (Three.js) par quaternions (rotation de
+// -90° autour de X), plutôt qu'une simple réassignation d'axes, car cette caméra n'a
+// jamais été calée à l'œil dans le rendu three.js.
+const MOBILE_BREAKPOINT_PX = 700;
+const CAMERA_ENTRY_POSITION_MOBILE = new THREE.Vector3(-19.154, 6.2046, 14.879);
+const CAMERA_ENTRY_ROTATION_MOBILE = new THREE.Euler(
+  THREE.MathUtils.degToRad(-112.5108),
+  THREE.MathUtils.degToRad(69.5039),
+  THREE.MathUtils.degToRad(-167.2310),
   'XYZ'
 );
 
@@ -482,8 +495,9 @@ function createStarField() {
 function init(gltf) {
   scene = gltf.scene;
   camera = findCamera(gltf) || new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.copy(CAMERA_ENTRY_POSITION);
-  camera.rotation.copy(CAMERA_ENTRY_ROTATION);
+  const isMobileScreen = window.innerWidth <= MOBILE_BREAKPOINT_PX;
+  camera.position.copy(isMobileScreen ? CAMERA_ENTRY_POSITION_MOBILE : CAMERA_ENTRY_POSITION);
+  camera.rotation.copy(isMobileScreen ? CAMERA_ENTRY_ROTATION_MOBILE : CAMERA_ENTRY_ROTATION);
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   makeShadable(gltf);
@@ -522,7 +536,7 @@ function init(gltf) {
   scene.add(textBubble);
   textBubble.position.set(-28.978, 4.65, 16.621);
   textBubble.scale.multiplyScalar(0.15);
-  textBubble.visible = false;
+  textBubble.visible = true;
 
   // Configuration du Plane comme bouton interactif pour naviguer vers la partie 1
   planeObject = gltf.scene.getObjectByName('plane');
@@ -608,12 +622,6 @@ function init(gltf) {
         }
       }
       if (dustMoved) posAttr.needsUpdate = true;
-    }
-
-    // Gestion de la visibilité de la bulle selon la distance caméra
-    if (textBubble) {
-      const distance = camera.position.distanceTo(textBubble.position);
-      textBubble.visible = distance < BUBBLE_VISIBILITY_DISTANCE;
     }
 
     // Rotation lente et constante du Plane
