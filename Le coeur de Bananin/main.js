@@ -131,13 +131,23 @@ AMBIENT_UNLOCK_EVENTS.forEach((evt) => {
 // souvent la lecture avec son à cet instant précis. Pour rester synchronisé malgré ce
 // blocage, on démarre le son MUET (l'autoplay muet n'est jamais bloqué) puis on le
 // démasque dès le premier vrai geste utilisateur, sans le relancer plus tard.
+//
+// Un son muet qu'on ne fait que "démasquer" reste inaudible si sa lecture (muette)
+// est déjà terminée au moment du geste (fichier court, utilisateur qui met du temps
+// à interagir) : démasquer un son fini ne produit aucun son. Dans ce cas, on le
+// relance depuis le début, cette fois audible — mieux vaut l'entendre en retard que
+// jamais.
 let entrancePlayed = false;
 
 function unmuteEntranceSound() {
-  entranceAudio.muted = audioMuted;
   AMBIENT_UNLOCK_EVENTS.forEach((evt) => {
     window.removeEventListener(evt, unmuteEntranceSound);
   });
+  entranceAudio.muted = audioMuted;
+  if (entranceAudio.ended) {
+    entranceAudio.currentTime = 0;
+    entranceAudio.play().catch(() => {});
+  }
 }
 
 function tryPlayEntranceSound() {
