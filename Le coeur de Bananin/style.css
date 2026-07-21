@@ -203,8 +203,8 @@ body {
   font-family: 'Caveat', cursive;
   font-weight: 700;
   font-size: clamp(3.6rem, 8vw, 5.2rem);
-  color: #2f3b45;
-  text-shadow: 0 1px 0 rgba(47, 59, 69, 0.15);
+  color: #55415d;
+  text-shadow: 0 1px 0 rgba(85, 65, 93, 0.15);
   margin: 0 0 14px;
 }
 
@@ -487,78 +487,96 @@ body {
   height: 100%;
 }
 
-/* Barre de contrôle de vitesse du Plane */
-
-/* Transition "dépliage de papier" entre partie 2 et partie 1 */
-#paper-unfold-overlay {
+/* Écran de fin de chapitre avec bouton "Dôgo kun soro" */
+.end-chapter-screen {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
   display: flex;
-  z-index: 9999;
-  pointer-events: none;
-}
-
-#paper-unfold-overlay[hidden] {
-  display: none;
-}
-
-#paper-unfold-overlay.fading-out {
-  transition: opacity 725ms ease-in-out;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f4efe6 0%, #e8dcd0 100%);
+  z-index: 100;
   opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
 }
 
-.paper-strip {
-  flex: 1 1 0;
+.end-chapter-screen.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dogo-btn {
+  padding: 20px 60px;
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #55415d;
+  background: transparent;
+  border: 3px solid #55415d;
+  cursor: pointer;
+  font-family: 'Orbitron', 'Share Tech Mono', monospace;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  box-shadow: 0 4px 15px rgba(85, 65, 93, 0.1);
+}
+
+.dogo-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
   height: 100%;
-  background: #ffffff;
-  transform: scaleX(0);
+  background: #55415d;
+  z-index: -1;
+  transition: left 0.4s ease;
 }
 
-.paper-strip--left {
-  transform-origin: right center;
+.dogo-btn:hover {
+  color: #f4efe6;
+  box-shadow: 0 8px 30px rgba(85, 65, 93, 0.3);
+  transform: translateY(-2px);
 }
 
-.paper-strip--right {
-  transform-origin: left center;
+.dogo-btn:hover::before {
+  left: 0;
 }
 
-@keyframes paper-strip-unfold-left {
-  0% {
-    transform: scaleX(0) rotateY(-40deg);
+.dogo-btn:active {
+  transform: translateY(0);
+}
+
+/* Conteneur et logo pour "Dôgo kun soro" */
+.dogo-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+
+.dogo-logo {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  opacity: 0;
+  animation: fadeInDown 0.8s ease 0.3s forwards;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
   }
-  100% {
-    transform: scaleX(1) rotateY(0deg);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes paper-strip-unfold-right {
-  0% {
-    transform: scaleX(0) rotateY(40deg);
-  }
-  100% {
-    transform: scaleX(1) rotateY(0deg);
-  }
-}
-
-#paper-unfold-overlay.unfolding .paper-strip--left {
-  animation-name: paper-strip-unfold-left;
-  animation-duration: 700ms;
-  animation-timing-function: ease-out;
-  animation-fill-mode: forwards;
-}
-
-#paper-unfold-overlay.unfolding .paper-strip--right {
-  animation-name: paper-strip-unfold-right;
-  animation-duration: 700ms;
-  animation-timing-function: ease-out;
-  animation-fill-mode: forwards;
-}
-
-/* Délais par bande, du centre (le plus court) vers les bords (le plus long) :
-   distance au centre = |index - 2.5| ; délai = distance * 150ms */
-#paper-unfold-overlay.unfolding .paper-strip:nth-child(1) { animation-delay: 375ms; }
-#paper-unfold-overlay.unfolding .paper-strip:nth-child(2) { animation-delay: 225ms; }
-#paper-unfold-overlay.unfolding .paper-strip:nth-child(3) { animation-delay: 75ms; }
-#paper-unfold-overlay.unfolding .paper-strip:nth-child(4) { animation-delay: 75ms; }
-#paper-unfold-overlay.unfolding .paper-strip:nth-child(5) { animation-delay: 225ms; }
-#paper-unfold-overlay.unfolding .paper-strip:nth-child(6) { animation-delay: 375ms; }
+/* Barre de contrôle de vitesse du Plane */

@@ -285,3 +285,28 @@ function waitForScene3DReady() {
   }
 }
 waitForScene3DReady();
+
+// Gestion de l'écran de fin de chapitre avec bouton "Dôgo kun soro"
+const endChapterScreen = document.getElementById('end-chapter-screen');
+const dogoBtn = document.getElementById('dogo-kun-soro-btn');
+let endChapterShown = false;
+
+window.addEventListener('scroll', () => {
+  if (!endChapterShown && scrollSpace) {
+    const scrollHeight = scrollSpace.offsetHeight;
+    const scrolledAmount = window.scrollY + window.innerHeight;
+    const scrollProgress = scrolledAmount / scrollHeight;
+
+    // Afficher le bouton quand l'utilisateur a scrollé à 95% ou plus
+    if (scrollProgress >= 0.95) {
+      endChapterShown = true;
+      endChapterScreen.classList.add('visible');
+    }
+  }
+});
+
+// Placeholder pour le lien du bouton (à remplir avec ton URL)
+dogoBtn.addEventListener('click', () => {
+  // window.location.href = 'URL_À_REMPLIR'; // À remplacer par le vrai lien
+  console.log('Bouton Dôgo kun soro cliqué !');
+});
