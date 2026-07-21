@@ -166,25 +166,56 @@ function maybeTriggerBikeBell(progress) {
   bikeBellLastProgress = progress;
 }
 
-// Sons des textes narratifs : joués une seule fois au début de chaque texte
+// Sons des textes narratifs : boucle tant que l'utilisateur reste dans la section,
+// fade out progressif quand il quitte.
 const STORY_SOUNDS = [
-  { start: 0.12, audio: new Audio('asset/audio/pilon (1).mp3'), played: false }, // story-text-3
+  {
+    start: 0.12,
+    audio: new Audio('asset/audio/pilon (1).mp3'),
+    state: 'idle', // idle | playing | fading
+    startedAt: null,
+    baseVolume: 0.5,
+    fadeOutDuration: 800, // ms
+    fadeOutStart: null,
+  }, // story-text-3
 ];
 
 STORY_SOUNDS.forEach((sound) => {
   sound.audio.preload = 'auto';
+  sound.audio.loop = true;
 });
 
 function maybeTriggerStorySound(progress) {
   STORY_SOUNDS.forEach((sound) => {
-    const shouldPlay = progress >= sound.start && !sound.played;
-    if (shouldPlay) {
-      sound.played = true;
+    const isInSection = progress >= sound.start;
+
+    if (isInSection && sound.state === 'idle') {
+      // Entrer dans la section : démarrer le son
+      sound.state = 'playing';
+      sound.startedAt = performance.now();
       sound.audio.muted = chirpsMuted;
+      sound.audio.volume = sound.baseVolume;
       sound.audio.currentTime = 0;
       sound.audio.play().catch(() => {});
-    } else if (progress < sound.start) {
-      sound.played = false;
+    } else if (isInSection && sound.state === 'playing') {
+      // Rester dans la section : le son tourne en boucle (grâce à loop: true)
+      sound.audio.volume = sound.baseVolume;
+    } else if (!isInSection && sound.state === 'playing') {
+      // Quitter la section : commencer le fade out
+      sound.state = 'fading';
+      sound.fadeOutStart = performance.now();
+    } else if (sound.state === 'fading') {
+      // Pendant le fade out : réduire progressivement le volume
+      const elapsed = performance.now() - sound.fadeOutStart;
+      const progress = Math.min(elapsed / sound.fadeOutDuration, 1);
+      sound.audio.volume = sound.baseVolume * (1 - progress);
+
+      if (progress >= 1) {
+        // Fade out terminé : arrêter le son
+        sound.audio.pause();
+        sound.audio.currentTime = 0;
+        sound.state = 'idle';
+      }
     }
   });
 }
