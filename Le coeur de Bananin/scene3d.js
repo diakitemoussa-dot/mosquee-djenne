@@ -166,6 +166,29 @@ function maybeTriggerBikeBell(progress) {
   bikeBellLastProgress = progress;
 }
 
+// Sons des textes narratifs : joués une seule fois au début de chaque texte
+const STORY_SOUNDS = [
+  { start: 0.12, audio: new Audio('asset/audio/pilon (1).mp3'), played: false }, // story-text-3
+];
+
+STORY_SOUNDS.forEach((sound) => {
+  sound.audio.preload = 'auto';
+});
+
+function maybeTriggerStorySound(progress) {
+  STORY_SOUNDS.forEach((sound) => {
+    const shouldPlay = progress >= sound.start && !sound.played;
+    if (shouldPlay) {
+      sound.played = true;
+      sound.audio.muted = chirpsMuted;
+      sound.audio.currentTime = 0;
+      sound.audio.play().catch(() => {});
+    } else if (progress < sound.start) {
+      sound.played = false;
+    }
+  });
+}
+
 function createBirds() {
   const gaps = getLayerDepthGaps();
 
@@ -370,6 +393,7 @@ function setProgress(progress) {
   updateStoryTexts(progress);
   maybeTriggerFirstEagleCry(progress);
   maybeTriggerBikeBell(progress);
+  maybeTriggerStorySound(progress);
   if (!mixer || !actions.length) return;
   // On repart de la base propre (sans décalage de parallaxe) avant de rejouer l'animation :
   // sinon, si la caméra n'a pas sa propre animation à cet instant, mixer.update() ne
