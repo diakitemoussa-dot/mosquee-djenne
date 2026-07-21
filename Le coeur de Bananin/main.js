@@ -1,3 +1,7 @@
+import './loading-animation.js';
+import './scene3d.js';
+import './scene3d-part2.js';
+
 const ASSETS_TO_PRELOAD = [
   'asset/image/la coline ..jpg',
   'asset/image/la falaise ..png',
