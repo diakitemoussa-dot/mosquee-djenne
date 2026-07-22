@@ -308,38 +308,47 @@ function setupPlaneButton(plane, onClickCallback) {
 
 function createTextBubble(text) {
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 128;
+  canvas.width = 512;
+  canvas.height = 256;
   const ctx = canvas.getContext('2d');
 
-  // Fond blanc arrondi
-  ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 2;
-  const radius = 10;
+  // Ombre sous la bulle pour le relief
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+  ctx.beginPath();
+  ctx.ellipse(canvas.width / 2, canvas.height - 8, canvas.width * 0.4, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Fond blanc arrondi avec dégradé léger pour le relief
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height - 24);
+  gradient.addColorStop(0, '#ffffff');
+  gradient.addColorStop(1, '#f5f5f5');
+  ctx.fillStyle = gradient;
+  ctx.strokeStyle = '#333333';
+  ctx.lineWidth = 3;
+  const radius = 20;
   ctx.beginPath();
   ctx.moveTo(radius, 0);
   ctx.lineTo(canvas.width - radius, 0);
   ctx.quadraticCurveTo(canvas.width, 0, canvas.width, radius);
-  ctx.lineTo(canvas.width, canvas.height - radius - 12);
-  ctx.quadraticCurveTo(canvas.width, canvas.height - 12, canvas.width - radius, canvas.height - 12);
-  ctx.lineTo(canvas.width * 0.6, canvas.height - 12);
+  ctx.lineTo(canvas.width, canvas.height - radius - 24);
+  ctx.quadraticCurveTo(canvas.width, canvas.height - 24, canvas.width - radius, canvas.height - 24);
+  ctx.lineTo(canvas.width * 0.6, canvas.height - 24);
   ctx.lineTo(canvas.width * 0.55, canvas.height);
-  ctx.lineTo(canvas.width * 0.5, canvas.height - 12);
-  ctx.lineTo(radius, canvas.height - 12);
-  ctx.quadraticCurveTo(0, canvas.height - 12, 0, canvas.height - radius - 12);
+  ctx.lineTo(canvas.width * 0.5, canvas.height - 24);
+  ctx.lineTo(radius, canvas.height - 24);
+  ctx.quadraticCurveTo(0, canvas.height - 24, 0, canvas.height - radius - 24);
   ctx.lineTo(0, radius);
   ctx.quadraticCurveTo(0, 0, radius, 0);
   ctx.fill();
   ctx.stroke();
 
   // Texte noir, avec retour à la ligne automatique pour les phrases longues
-  ctx.fillStyle = '#000000';
-  ctx.font = 'bold 20px Arial';
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = 'bold 32px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  const maxTextWidth = canvas.width - 24;
+  const maxTextWidth = canvas.width - 48;
   const words = text.split(' ');
   const lines = [];
   let currentLine = '';
@@ -354,8 +363,8 @@ function createTextBubble(text) {
   });
   if (currentLine) lines.push(currentLine);
 
-  const lineHeight = 22;
-  const textAreaCenterY = (canvas.height - 12) / 2;
+  const lineHeight = 44;
+  const textAreaCenterY = (canvas.height - 24) / 2;
   const startY = textAreaCenterY - ((lines.length - 1) * lineHeight) / 2;
   lines.forEach((line, i) => {
     ctx.fillText(line, canvas.width / 2, startY + i * lineHeight);
@@ -364,7 +373,7 @@ function createTextBubble(text) {
   const texture = new THREE.CanvasTexture(canvas);
   const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
   const sprite = new THREE.Sprite(spriteMaterial);
-  sprite.scale.set(3, 1.5, 1);
+  sprite.scale.set(4, 2, 1);
   return sprite;
 }
 
@@ -550,11 +559,11 @@ function init(gltf) {
 
   // Bulle aux coordonnées précises (depuis Blender, converties en Three.js)
   // Conversion Blender (X, Y, Z) → Three.js (X, Z, -Y)
-  textBubble = createTextBubble('clique sur l\'avion en papier et découvre !');
+  textBubble = createTextBubble('clic sur l\'avion en papier pour connaitre l\'histoire du coeur de l\'univers dogon');
   scene.add(textBubble);
-  textBubble.position.set(-28.978, 4.65, 16.621);
-  textBubbleBaseY = 4.65; // Stocker la position Y de départ pour l'oscillation
-  textBubble.scale.multiplyScalar(0.15);
+  textBubble.position.set(-28.978, 5.0, 16.621);
+  textBubbleBaseY = 5.0; // Stocker la position Y de départ pour l'oscillation
+  textBubble.scale.multiplyScalar(0.2);
   textBubble.visible = true;
 
   // Configuration du Plane comme bouton interactif pour naviguer vers la partie 1
@@ -648,13 +657,15 @@ function init(gltf) {
       planeObject.rotation.z += 0.01;
     }
 
-    // Animation de la bulle : secouement subtil (shake) pour attirer l'attention
+    // Animation de la bulle : oscillation douce de droite à gauche pour attirer l'attention
     if (textBubble) {
       const t = clock.elapsedTime;
-      // Tremblements rapides en X et Y (petite amplitude ±0.1) pour un effet "shake"
-      textBubble.position.x = -28.978 + Math.sin(t * 8) * 0.1 + Math.cos(t * 6.3) * 0.08;
-      textBubble.position.y = textBubbleBaseY + Math.sin(t * 7.5) * 0.08 + Math.cos(t * 5.7) * 0.06;
-      textBubble.rotation.z = Math.sin(t * 6) * 0.08; // Rotation subtile qui suit le shake
+      // Mouvement lent et fluide en X (droite-gauche) : ±0.12 unités à 1.5 Hz
+      textBubble.position.x = -28.978 + Math.sin(t * 1.5) * 0.12;
+      // Position Y stable, pas de mouvement vertical
+      textBubble.position.y = textBubbleBaseY;
+      // Rotation très subtile qui suit le mouvement horizontal
+      textBubble.rotation.z = Math.sin(t * 1.5) * 0.04;
     }
 
     // Clignotement continu du halo jaune sur la poussière : lueur toujours forte,
@@ -885,6 +896,13 @@ window.setScene3DPart2Visible = function setScene3DPart2Visible(visible) {
 const PART2_FADE_OUT_MS = 1200; // doit rester synchronisé avec la transition CSS de #scene3d-part2
 
 window.goToPart1 = function goToPart1() {
+  // Commencer le chargement du modèle Partie 1 IMMÉDIATEMENT au clic sur l'avion,
+  // en arrière-plan, sans bloquer la transition. Le modèle sera prêt quand
+  // l'animation du fondu croisé sera terminée.
+  if (typeof window.startLoadingPart1Model === 'function') {
+    window.startLoadingPart1Model();
+  }
+
   container.classList.remove('visible');
 
   const scene3dDiv = document.getElementById('scene3d');

@@ -104,6 +104,71 @@ function createTextBubble(text) {
   return sprite;
 }
 
+function createARTextBubble(text) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+
+  // Dégradé chaud (orange/doré) pour différencier visiblement de la bulle standard
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height - 12);
+  gradient.addColorStop(0, '#ffd89b');
+  gradient.addColorStop(1, '#ffb366');
+  ctx.fillStyle = gradient;
+  ctx.strokeStyle = '#ff8c42';
+  ctx.lineWidth = 3;
+  const radius = 10;
+  ctx.beginPath();
+  ctx.moveTo(radius, 0);
+  ctx.lineTo(canvas.width - radius, 0);
+  ctx.quadraticCurveTo(canvas.width, 0, canvas.width, radius);
+  ctx.lineTo(canvas.width, canvas.height - radius - 12);
+  ctx.quadraticCurveTo(canvas.width, canvas.height - 12, canvas.width - radius, canvas.height - 12);
+  ctx.lineTo(canvas.width * 0.6, canvas.height - 12);
+  ctx.lineTo(canvas.width * 0.55, canvas.height);
+  ctx.lineTo(canvas.width * 0.5, canvas.height - 12);
+  ctx.lineTo(radius, canvas.height - 12);
+  ctx.quadraticCurveTo(0, canvas.height - 12, 0, canvas.height - radius - 12);
+  ctx.lineTo(0, radius);
+  ctx.quadraticCurveTo(0, 0, radius, 0);
+  ctx.fill();
+  ctx.stroke();
+
+  // Texte blanc/clair (plus visible sur fond chaud)
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 20px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const maxTextWidth = canvas.width - 24;
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = '';
+  words.forEach((word) => {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (ctx.measureText(testLine).width > maxTextWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  });
+  if (currentLine) lines.push(currentLine);
+
+  const lineHeight = 22;
+  const textAreaCenterY = (canvas.height - 12) / 2;
+  const startY = textAreaCenterY - ((lines.length - 1) * lineHeight) / 2;
+  lines.forEach((line, i) => {
+    ctx.fillText(line, canvas.width / 2, startY + i * lineHeight);
+  });
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+  const sprite = new THREE.Sprite(spriteMaterial);
+  sprite.scale.set(3, 1.5, 1);
+  return sprite;
+}
+
 function wrapRange(value, range) {
   const span = range * 2;
   return (((value % span) + span) % span) - range;
@@ -619,8 +684,8 @@ function init(gltf) {
     timelineDuration = Math.max(...gltf.animations.map((clip) => clip.duration));
   }
 
-  // Créer la bulle AR avec le message d'instruction
-  arBubble = createTextBubble("n'oublie pas de clic sur le bouton AR pour le placer dans ton modèle réel");
+  // Créer la bulle AR avec le message d'instruction (design chaud/doré différencié)
+  arBubble = createARTextBubble("n'oublie pas que clic sur le AR pour me place dans ton monde réel");
   scene.add(arBubble);
   arBubble.position.set(-15, 3.5, 15);
   arBubbleBaseY = arBubble.position.y;
@@ -639,6 +704,7 @@ function init(gltf) {
 }
 
 let glbReadyCallback = null;
+let part1ModelLoadingStarted = false;
 
 // Même seuil que le choix d'image phone/pc du logo de chargement (style.css) : sous
 // 700px on charge un modèle dédié smartphone, au-dessus le modèle PC habituel. Le
@@ -653,18 +719,26 @@ dracoLoader.setDecoderPath('https://unpkg.com/three@0.164.0/examples/jsm/libs/dr
 
 const loader = new GLTFLoader();
 loader.setDRACOLoader(dracoLoader);
-loader.load(
-  MODEL_PATH,
-  (gltf) => {
-    loadedGltf = gltf;
-    if (glbReadyCallback) glbReadyCallback();
-  },
-  (event) => {
-    if (window.onScene3DProgress && event.total) {
-      window.onScene3DProgress(event.loaded / event.total);
-    }
-  },
-);
+
+// Lazy loading : ne charger le modèle de la Partie 1 que lorsque l'utilisateur
+// clique sur l'avion pour revenir à la Partie 1. Cela évite de charger deux gros
+// modèles 3D en parallèle au démarrage (qui bloquait l'écran de chargement).
+window.startLoadingPart1Model = function startLoadingPart1Model() {
+  if (part1ModelLoadingStarted) return;
+  part1ModelLoadingStarted = true;
+  loader.load(
+    MODEL_PATH,
+    (gltf) => {
+      loadedGltf = gltf;
+      if (glbReadyCallback) glbReadyCallback();
+    },
+    (event) => {
+      if (window.onScene3DProgress && event.total) {
+        window.onScene3DProgress(event.loaded / event.total);
+      }
+    },
+  );
+};
 
 window.onScene3DReady = function onScene3DReady(callback) {
   if (loadedGltf) callback();
@@ -686,5 +760,7 @@ function startWhenReady() {
 }
 
 window.startScene3D = function startScene3D() {
+  // Déclencher le chargement du modèle si ce n'est pas déjà fait
+  window.startLoadingPart1Model();
   startWhenReady();
 };
