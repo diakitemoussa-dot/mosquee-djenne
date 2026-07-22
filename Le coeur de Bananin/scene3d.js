@@ -39,6 +39,71 @@ let startTime = 0;
 const BIRD_COUNT = 10;
 const birds = [];
 
+let arBubble = null;
+let arBubbleBaseY = 0;
+
+function createTextBubble(text) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+
+  // Fond blanc arrondi
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 2;
+  const radius = 10;
+  ctx.beginPath();
+  ctx.moveTo(radius, 0);
+  ctx.lineTo(canvas.width - radius, 0);
+  ctx.quadraticCurveTo(canvas.width, 0, canvas.width, radius);
+  ctx.lineTo(canvas.width, canvas.height - radius - 12);
+  ctx.quadraticCurveTo(canvas.width, canvas.height - 12, canvas.width - radius, canvas.height - 12);
+  ctx.lineTo(canvas.width * 0.6, canvas.height - 12);
+  ctx.lineTo(canvas.width * 0.55, canvas.height);
+  ctx.lineTo(canvas.width * 0.5, canvas.height - 12);
+  ctx.lineTo(radius, canvas.height - 12);
+  ctx.quadraticCurveTo(0, canvas.height - 12, 0, canvas.height - radius - 12);
+  ctx.lineTo(0, radius);
+  ctx.quadraticCurveTo(0, 0, radius, 0);
+  ctx.fill();
+  ctx.stroke();
+
+  // Texte noir, avec retour à la ligne automatique pour les phrases longues
+  ctx.fillStyle = '#000000';
+  ctx.font = 'bold 20px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const maxTextWidth = canvas.width - 24;
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = '';
+  words.forEach((word) => {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (ctx.measureText(testLine).width > maxTextWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  });
+  if (currentLine) lines.push(currentLine);
+
+  const lineHeight = 22;
+  const textAreaCenterY = (canvas.height - 12) / 2;
+  const startY = textAreaCenterY - ((lines.length - 1) * lineHeight) / 2;
+  lines.forEach((line, i) => {
+    ctx.fillText(line, canvas.width / 2, startY + i * lineHeight);
+  });
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+  const sprite = new THREE.Sprite(spriteMaterial);
+  sprite.scale.set(3, 1.5, 1);
+  return sprite;
+}
+
 function wrapRange(value, range) {
   const span = range * 2;
   return (((value % span) + span) % span) - range;
@@ -349,6 +414,15 @@ function applyParallaxAndRender() {
 
   updateBirds((performance.now() - startTime) / 1000);
 
+  // Animation de la bulle AR : oscillation Y (flottement vertical) + rotation Z douce
+  if (arBubble) {
+    const t = (performance.now() - startTime) / 1000;
+    // Oscillation Y pour un flottement doux (±0.3 unités à 1 Hz)
+    arBubble.position.y = arBubbleBaseY + Math.sin(t * 1) * 0.3;
+    // Rotation Z subtile qui suit le mouvement
+    arBubble.rotation.z = Math.sin(t * 1) * 0.05;
+  }
+
   renderer.render(scene, camera);
 }
 
@@ -544,6 +618,13 @@ function init(gltf) {
     });
     timelineDuration = Math.max(...gltf.animations.map((clip) => clip.duration));
   }
+
+  // Créer la bulle AR avec le message d'instruction
+  arBubble = createTextBubble("n'oublie pas de clic sur le bouton AR pour le placer dans ton modèle réel");
+  scene.add(arBubble);
+  arBubble.position.set(-15, 3.5, 15);
+  arBubbleBaseY = arBubble.position.y;
+  arBubble.scale.set(0.25, 0.25, 0.25);
 
   window.addEventListener('resize', onResize);
   window.addEventListener('scroll', onScroll, { passive: true });
