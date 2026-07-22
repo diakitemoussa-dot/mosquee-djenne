@@ -510,10 +510,10 @@ body {
 }
 
 .dogo-btn {
-  padding: 20px 60px;
-  font-size: 36px;
+  padding: 25px 50px;
+  font-size: 32px;
   font-weight: 700;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   color: #55415d;
   background: transparent;
   border: 3px solid #55415d;
@@ -524,6 +524,7 @@ body {
   overflow: hidden;
   text-transform: uppercase;
   box-shadow: 0 4px 15px rgba(85, 65, 93, 0.1);
+  line-height: 1.4;
 }
 
 .dogo-btn::before {
