@@ -317,3 +317,15 @@ arButton.addEventListener('click', () => {
   console.log('Bouton AR cliqué - Activer la réalité augmentée');
   // À brancher avec ta solution AR (WebAR, 8th Wall, etc.)
 });
+
+// Bouton Retour - Retourner à Partie 1 depuis l'écran DOGOKUN SORO
+const returnBtn = document.getElementById('return-btn');
+returnBtn.addEventListener('click', () => {
+  // Cacher l'écran de fin et revenir à Partie 1
+  endChapterScreen.classList.remove('visible');
+  window.scrollTo(0, 0);
+  // Réactiver la scène 3D et la section narrative
+  scene3d.hidden = false;
+  scene3d.classList.add('visible');
+  endChapterShown = false;
+});
