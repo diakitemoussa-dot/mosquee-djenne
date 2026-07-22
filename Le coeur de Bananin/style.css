@@ -583,8 +583,9 @@ body {
 /* Responsive design pour mobile */
 @media (max-width: 768px) {
   .dogo-logo {
-    width: 140px;
-    height: 140px;
+    width: 180px;
+    height: 180px;
+    margin-top: -20px;
   }
 
   .dogo-btn {
