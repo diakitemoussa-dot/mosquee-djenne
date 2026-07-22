@@ -580,6 +580,69 @@ body {
   }
 }
 
+/* Bouton AR - Réalité augmentée */
+.ar-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #55415d;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+  box-shadow: 0 4px 12px rgba(85, 65, 93, 0.2);
+}
+
+#scene3d .ar-button {
+  opacity: 1;
+  pointer-events: auto;
+  animation: arBounceGlow 3s ease-in-out infinite;
+}
+
+.ar-icon {
+  width: 32px;
+  height: 32px;
+  stroke: #f4efe6;
+  color: #f4efe6;
+}
+
+/* Animation cool : bounce + pulse glow */
+@keyframes arBounceGlow {
+  0% {
+    transform: translateY(0px);
+    box-shadow: 0 4px 12px rgba(85, 65, 93, 0.2),
+                0 0 0 0px rgba(85, 65, 93, 0.4);
+  }
+  50% {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 20px rgba(85, 65, 93, 0.3),
+                0 0 0 8px rgba(85, 65, 93, 0.2);
+  }
+  100% {
+    transform: translateY(0px);
+    box-shadow: 0 4px 12px rgba(85, 65, 93, 0.2),
+                0 0 0 0px rgba(85, 65, 93, 0);
+  }
+}
+
+.ar-button:hover {
+  background: #6b5273;
+  box-shadow: 0 6px 20px rgba(85, 65, 93, 0.4);
+  animation: arBounceGlow 2s ease-in-out infinite;
+}
+
+.ar-button:active {
+  transform: scale(0.95);
+}
+
 /* Responsive design pour mobile */
 @media (max-width: 768px) {
   .dogo-logo {

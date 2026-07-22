@@ -310,3 +310,10 @@ dogoBtn.addEventListener('click', () => {
   // window.location.href = 'URL_À_REMPLIR'; // À remplacer par le vrai lien
   console.log('Bouton Dôgo kun soro cliqué !');
 });
+
+// Bouton AR - Réalité augmentée (visible seulement dans Partie 1, étape 1)
+const arButton = document.getElementById('ar-button');
+arButton.addEventListener('click', () => {
+  console.log('Bouton AR cliqué - Activer la réalité augmentée');
+  // À brancher avec ta solution AR (WebAR, 8th Wall, etc.)
+});
