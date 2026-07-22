@@ -17,3 +17,19 @@ Gemini API key.txt
 .playwright-mcp/
 experience-personnages*.jpeg
 usdz-base64.txt
+
+# Sources Blender et fichiers volumineux
+sources/blender/
+3D/
+*.blend
+
+# Screenshots et fichiers temporaires de test
+*.png
+*.jpg
+*.jpeg
+screenshots/
+test-*.png
+
+# Exception: images utilisées dans les projets
+!projects/active/**/asset/image/**
+!shared/assets/**/
