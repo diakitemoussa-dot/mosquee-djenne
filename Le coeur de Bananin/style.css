@@ -580,4 +580,18 @@ body {
   }
 }
 
+/* Responsive design pour mobile */
+@media (max-width: 768px) {
+  .dogo-logo {
+    width: 140px;
+    height: 140px;
+  }
+
+  .dogo-btn {
+    padding: 16px 40px;
+    font-size: 24px;
+    letter-spacing: 1px;
+  }
+}
+
 /* Barre de contrôle de vitesse du Plane */
