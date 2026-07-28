@@ -1110,6 +1110,15 @@ body {
   padding: 0 12px;
 }
 
+@media (max-width: 768px) {
+  .cta-wrap {
+    position: absolute;
+    top: 15%;
+    z-index: 20;
+    margin-top: 0;
+  }
+}
+
 .cta-rail {
   flex: 1;
   height: 1px;
