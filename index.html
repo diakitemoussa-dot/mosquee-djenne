@@ -246,7 +246,29 @@
 
           <!-- Colonne droite : badge -->
           <aside class="t-right">
-            <div class="t-badge">DRONE<br /><b id="droneMode">—</b></div>
+            <div class="t-badge">
+              <span class="t-badge-text">DRONE<br /><b id="droneMode">—</b></span>
+              <!-- BOUTON CTA "DÉCOLLE LE DRONE" -->
+              <div class="cta-wrap">
+                <span class="cta-rail left"></span>
+                <button id="launchBtn" class="cta-launch" type="button" aria-label="Décolle le drone">
+                  <span class="cta-ring"></span>
+                  <span class="cta-ring r2"></span>
+                  <span class="cta-core">
+                    <svg viewBox="0 0 24 24" class="cta-arrow" aria-hidden="true">
+                      <path d="M12 3 L18 11 L14 11 L14 21 L10 21 L10 11 L6 11 Z" fill="currentColor" />
+                    </svg>
+                  </span>
+                  <span class="cta-text">
+                    <em>// COMMANDE D'ENVOL</em>
+                    <strong>DÉCOLLE LE DRONE</strong>
+                  </span>
+                  <span class="cta-energy"><i></i></span>
+                  <span class="cta-chev">›</span>
+                </button>
+                <span class="cta-rail right"></span>
+              </div>
+            </div>
             <div class="t-mini">
               <span>ALT</span><b>00m</b>
               <span>SIG</span><b>98%</b>
@@ -279,27 +301,6 @@
           <p class="t-title">DJENNÉ <small>Patrimoine · Survol 3D</small></p>
           <p class="t-foot-stat"><span class="dot"></span>SYSTÈME PRÊT AU LANCEMENT</p>
         </footer>
-      </div>
-
-      <!-- BOUTON CTA "DÉCOLLE LE DRONE" -->
-      <div class="cta-wrap">
-        <span class="cta-rail left"></span>
-        <button id="launchBtn" class="cta-launch" type="button" aria-label="Décolle le drone">
-          <span class="cta-ring"></span>
-          <span class="cta-ring r2"></span>
-          <span class="cta-core">
-            <svg viewBox="0 0 24 24" class="cta-arrow" aria-hidden="true">
-              <path d="M12 3 L18 11 L14 11 L14 21 L10 21 L10 11 L6 11 Z" fill="currentColor" />
-            </svg>
-          </span>
-          <span class="cta-text">
-            <em>// COMMANDE D'ENVOL</em>
-            <strong>DÉCOLLE LE DRONE</strong>
-          </span>
-          <span class="cta-energy"><i></i></span>
-          <span class="cta-chev">›</span>
-        </button>
-        <span class="cta-rail right"></span>
       </div>
 
       <!-- Reflet au sol -->
